@@ -6,23 +6,28 @@ import com.github.sarxos.webcam.WebcamMotionEvent;
 import com.github.sarxos.webcam.WebcamMotionListener;
 
 import javax.activation.DataHandler;
-import javax.activation.DataSource;
 import javax.activation.FileDataSource;
 import javax.imageio.ImageIO;
 import javax.mail.*;
 import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
+import javax.mail.internet.MimeMultipart;
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Properties;
+import java.util.Vector;
 
 public class WebcamRunner extends Application implements WebcamMotionListener {
 
-    private     boolean             running;
-    private     long                delay;
+    private final int MOTION_TIME_TO_WAIT_BEFORE_EMAILING = 15000; //15 Seconds
+    private final int MOTION_CAPTURE_INTERVAL = 500; //0.5 Second
+
+    private     boolean             running, motionDetected, newMotionDetected;
+    private     long                delay, currentTimeMillis, nextImageTimeMillis, endTimeMillis;
     private     Webcam              webcam;
     private     LocalDateTime       localDateTime;
 
@@ -30,12 +35,14 @@ public class WebcamRunner extends Application implements WebcamMotionListener {
 
         this.delay = delay;
 
+        motionDetected = false;
+        newMotionDetected = false;
+
         webcam = Webcam.getDefault();
         WebcamMotionDetector detector = new WebcamMotionDetector(webcam);
 
         webcam.setViewSize(new Dimension(640, 480));
-        //TODO: get all images captured during motion and attach to a single email once motion stops or after timer
-        detector.setInterval(500);
+        detector.setInterval(MOTION_CAPTURE_INTERVAL);
         detector.addMotionListener(this);
 
         webcam.open();
@@ -43,20 +50,22 @@ public class WebcamRunner extends Application implements WebcamMotionListener {
 
     }
 
-    private String createFileName(LocalDateTime ldt, boolean motion){
+    private String createFileName(LocalDateTime ldt, boolean motion, int id){
         if(motion){
-            return "images/" + "MOTION_" + String.format("%02d", ldt.getHour()) + "-" + String.format("%02d", ldt.getMinute()) + "-" + String.format("%02d", ldt.getSecond())
-                    + "_" + String.format("%02d", ldt.getDayOfMonth()) + "-" + String.format("%02d", ldt.getMonthValue()) + "-" + String.format("%02d", ldt.getYear());
+            return "images/" + "MOTION_" + String.format("%02d", ldt.getHour()) + "-" + String.format("%02d", ldt.getMinute()) +
+                    "-" + String.format("%02d", ldt.getSecond()) + "_" + String.format("%02d", ldt.getDayOfMonth()) + "-" + String.format("%02d", ldt.getMonthValue()) +
+                    "-" + String.format("%02d", ldt.getYear()) + "_" + Integer.toString(id) + ".jpg";
         } else {
-            return "images/" + String.format("%02d", ldt.getHour()) + "-" + String.format("%02d", ldt.getMinute())
-                    + "_" + String.format("%02d", ldt.getDayOfMonth()) + "-" + String.format("%02d", ldt.getMonthValue()) + "-" + String.format("%02d", ldt.getYear());
+            return "images/" + String.format("%02d", ldt.getHour()) + "-" + String.format("%02d", ldt.getMinute()) +
+                    "_" + String.format("%02d", ldt.getDayOfMonth()) + "-" + String.format("%02d", ldt.getMonthValue()) +
+                    "-" + String.format("%02d", ldt.getYear()) + "_" + Integer.toString(id) + ".jpg";
         }
     }
 
     public void run(){
         running = true;
 
-        long currentTimeMillis = System.currentTimeMillis();
+        currentTimeMillis = System.currentTimeMillis();
 
         while(running) {
 
@@ -66,17 +75,16 @@ public class WebcamRunner extends Application implements WebcamMotionListener {
 
                 localDateTime = LocalDateTime.now(ZoneId.of("Europe/London"));
 
-                String fileName = createFileName(localDateTime, false);
+                String fileName = "";
 
                 if (Util.isBetween(localDateTime.getSecond(), 0, 14)){
-                    //TODO: JPG in create file name func, add param for num
-                    fileName += "_0.jpg";
+                    fileName = createFileName(localDateTime, false, 0);
                 } else if (Util.isBetween(localDateTime.getSecond(), 15, 29)){
-                    fileName += "_1.jpg";
+                    fileName = createFileName(localDateTime, false, 1);
                 } else if (Util.isBetween(localDateTime.getSecond(), 30, 44)){
-                    fileName += "_2.jpg";
+                    fileName = createFileName(localDateTime, false, 2);
                 } else if (Util.isBetween(localDateTime.getSecond(), 45, 60)){
-                    fileName += "_3.jpg";
+                    fileName = createFileName(localDateTime, false, 3);
                 }
 
                 File file = new File(fileName);
@@ -103,30 +111,62 @@ public class WebcamRunner extends Application implements WebcamMotionListener {
     @Override
     public void motionDetected(WebcamMotionEvent wme) {
 
-        localDateTime = LocalDateTime.now(ZoneId.of("Europe/London"));
-        String fileName = createFileName(localDateTime, true);
+        newMotionDetected = true;
 
-        fileName += ".jpg";
+        if(!motionDetected) {
 
-        File file = new File(fileName);
-        System.out.println("MOTION DETECTED: " + fileName);
+            System.out.println("MOTION DETECTED");
+            motionDetected = true;
 
-        try {
-            ImageIO.write(webcam.getImage(), "JPG", file);
-            Application.setLatestImageName(fileName);
-        } catch (IOException e) {
-            e.printStackTrace();
+            Vector<String> fileNames    = new Vector<>();
+
+            endTimeMillis               = currentTimeMillis + MOTION_TIME_TO_WAIT_BEFORE_EMAILING;
+            nextImageTimeMillis         = currentTimeMillis + MOTION_CAPTURE_INTERVAL;
+            localDateTime               = LocalDateTime.now(ZoneId.of("Europe/London"));
+
+            Runnable runnable = new Runnable() {
+                @Override
+                public void run() {
+
+                    while(true) {
+
+                        if (currentTimeMillis >= nextImageTimeMillis && newMotionDetected) {
+
+                            newMotionDetected = false;
+
+                            nextImageTimeMillis = currentTimeMillis + MOTION_CAPTURE_INTERVAL;
+                            String fileName = createFileName(localDateTime, true, localDateTime.getSecond());
+                            File file = new File(fileName);
+
+                            try {
+                                ImageIO.write(webcam.getImage(), "JPG", file);
+                                Application.setLatestImageName(fileName);
+                                fileNames.add(fileName);
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
+
+                        if (currentTimeMillis >= endTimeMillis) {
+                            sendEmail(fileNames);
+                            motionDetected = false;
+                            stop();
+                        }
+                    }
+                }
+            };
+
+            runnable.run();
+//            Thread thread = new Thread(runnable);
+//            thread.start();
+
         }
-
-        sendEmail(fileName);
-
     }
 
-    private void sendEmail(String imageName) {
-        DataSource dataSource = new FileDataSource(imageName);
+    private void sendEmail(Vector<String> imageNames) {
 
-        final String username = Util.EMAIL_ADDRESS;
-        final String password = Util.PASSWORD;
+        final String username = GlobalValues.EMAIL_ADDRESS;
+        final String password = GlobalValues.PASSWORD;
 
         Properties props = new Properties();
         props.put("mail.smtp.starttls.enable", "true");
@@ -143,14 +183,26 @@ public class WebcamRunner extends Application implements WebcamMotionListener {
 
         try {
 
+            MimeMultipart mimeMultipart = new MimeMultipart();
             Message message = new MimeMessage(session);
             message.setFrom(new InternetAddress(username));
             message.setRecipients(Message.RecipientType.TO,
                     InternetAddress.parse("tim.snow1991@gmail.com"));
             message.setSubject("Motion Detected");
             message.setText("Warning - Motion in home detected, image attached.");
-            message.setDataHandler(new DataHandler(dataSource));
-            message.setFileName(imageName);
+
+            Multipart multipart = new MimeMultipart();
+            MimeBodyPart mimeBodyPart = new MimeBodyPart();
+
+            for(String str : imageNames){
+                FileDataSource fileDataSource = new FileDataSource(str);
+                mimeBodyPart.setDataHandler(new DataHandler(fileDataSource));
+                mimeBodyPart.setFileName(str);
+                mimeMultipart.addBodyPart(mimeBodyPart);
+
+            }
+
+            message.setContent(multipart);
 
             Transport.send(message);
 

@@ -66,13 +66,13 @@ public class WebcamRunner extends Application implements WebcamMotionListener {
     public void run(){
         running = true;
 
-        currentTimeMillis = System.currentTimeMillis();
+        Long delayTimeMillis = System.currentTimeMillis();
 
         while(running) {
 
-            if(System.currentTimeMillis() >= currentTimeMillis) {
+            if(System.currentTimeMillis() >= delayTimeMillis) {
 
-                currentTimeMillis = System.currentTimeMillis() + delay;
+                delayTimeMillis= System.currentTimeMillis() + delay;
 
                 localDateTime = LocalDateTime.now(ZoneId.of("Europe/London"));
 

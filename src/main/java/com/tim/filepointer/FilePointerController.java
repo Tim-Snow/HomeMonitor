@@ -1,6 +1,5 @@
 package com.tim.filepointer;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -14,9 +13,9 @@ public class FilePointerController {
     private final AtomicLong counter = new AtomicLong();
 
     @RequestMapping("/image")
-    public FilePointer filePointer(@RequestParam(value="name", defaultValue="whelp") String name) {
+    public FilePointer filePointer(@RequestParam(value="id", defaultValue="0") String id) {
         return new FilePointer(counter.incrementAndGet(),
-                String.format(template, Application.getLatestImageName()));
+                String.format(template, Application.getImage(id)));
     }
 
     @RequestMapping("/latest_image")
@@ -25,6 +24,4 @@ public class FilePointerController {
                 String.format(template, Application.getLatestImageName()));
     }
 
-
-    //motion mapping?
 }

@@ -93,7 +93,6 @@ public class WebcamRunner extends Application implements WebcamMotionListener, R
         }
 
         webcam.close();
-        Application.exitSpring();
     }
 
     public void stop(){
@@ -105,7 +104,7 @@ public class WebcamRunner extends Application implements WebcamMotionListener, R
 
         newMotionDetected = true;
 
-        if(!motionDetected) {
+        if(!motionDetected && running) {
 
             System.out.println("MOTION DETECTED");
             motionDetected = true;

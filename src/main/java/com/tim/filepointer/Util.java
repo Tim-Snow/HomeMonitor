@@ -6,6 +6,9 @@ import org.springframework.context.ApplicationContext;
 public class Util {
 
     public static void initiateShutdown(ApplicationContext context, int returnCode){
+
+        //TODO move all images from session in to history folder
+
         SpringApplication.exit(context, () -> returnCode);
     }
 

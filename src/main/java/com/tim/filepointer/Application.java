@@ -9,7 +9,7 @@ import java.util.Stack;
 @SpringBootApplication
 public class Application {
 
-    private     static      int                 maxImages = 25;
+    private     static      int                 maxImages = 75;
 
     private     static      ApplicationContext      context;
     private     static      String                  latestImageName = "";

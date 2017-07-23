@@ -137,10 +137,11 @@ public class WebcamRunner extends Application implements WebcamMotionListener {
                         newMotionDetected = false;
 
                         nextImageTimeMillis = currentTimeMillis + MOTION_CAPTURE_INTERVAL;
-                        String fileName = createFileName(localDateTime, true, localDateTime.getSecond());
-                        File file = new File(fileName);
+                        String fileName     = createFileName(localDateTime, true, localDateTime.getSecond());
+
 
                         try {
+                            File file = new File(fileName);
                             ImageIO.write(webcam.getImage(), "JPG", file);
                             System.out.println("New image: " + fileName);
                             Application.setLatestImageName(fileName);
@@ -153,6 +154,7 @@ public class WebcamRunner extends Application implements WebcamMotionListener {
                     if (currentTimeMillis >= endTimeMillis) {
                         System.out.println("Sending email");
                         sendEmail(fileNames);
+                        fileNames.clear();
                         motionDetected = false;
                         return;
                     }
@@ -169,7 +171,6 @@ public class WebcamRunner extends Application implements WebcamMotionListener {
     private void sendEmail(Vector<String> imageNames) {
 
         final String username = GlobalValues.EMAIL_ADDRESS;
-        final String password = GlobalValues.PASSWORD;
 
         Properties props = new Properties();
         props.put("mail.smtp.starttls.enable", "true");
@@ -180,7 +181,7 @@ public class WebcamRunner extends Application implements WebcamMotionListener {
         Session session = Session.getInstance(props,
                 new javax.mail.Authenticator() {
                     protected PasswordAuthentication getPasswordAuthentication() {
-                        return new PasswordAuthentication(username, password);
+                        return new PasswordAuthentication(username, GlobalValues.PASSWORD);
                     }
                 });
 
@@ -189,7 +190,7 @@ public class WebcamRunner extends Application implements WebcamMotionListener {
             Message message = new MimeMessage(session);
             message.setFrom(new InternetAddress(username));
             message.setRecipients(Message.RecipientType.TO,
-                    InternetAddress.parse("tim.snow1991@gmail.com"));
+                    InternetAddress.parse(GlobalValues.TO_EMAIL_ADDRESS));
             message.setSubject("Motion Detected");
 
             Multipart multipart = new MimeMultipart();
@@ -197,9 +198,6 @@ public class WebcamRunner extends Application implements WebcamMotionListener {
             for(String str : imageNames){
 
                 MimeBodyPart mimeBodyPart = new MimeBodyPart();
-
-                FileDataSource fileDataSource = new FileDataSource(str);
-                mimeBodyPart.setDataHandler(new DataHandler(fileDataSource));
                 mimeBodyPart.setFileName(str);
                 mimeBodyPart.attachFile(new File(str));
 
@@ -207,15 +205,14 @@ public class WebcamRunner extends Application implements WebcamMotionListener {
 
             }
 
+            message.setText("Motion detected, images attached:");
             message.setContent(multipart);
 
             Transport.send(message);
 
             System.out.println("Email sent re motion");
 
-        } catch (MessagingException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
+        } catch (MessagingException | IOException e) {
             e.printStackTrace();
         }
     }

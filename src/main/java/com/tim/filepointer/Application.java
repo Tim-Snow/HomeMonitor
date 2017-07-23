@@ -9,18 +9,13 @@ import java.util.Stack;
 @SpringBootApplication
 public class Application {
 
-    private     static      int                 maxImages = 75;
-
     private     static      ApplicationContext      context;
     private     static      String                  latestImageName = "";
     private     static      Stack<String>           imageNames;
-    private     static      String[]                oldImageNames;
 
     public static void main(String[] args) {
 
-        imageNames = new Stack<String>();
-
-        //oldImageNames = new String[];
+        imageNames = new Stack<>();
 
         context = SpringApplication.run(Application.class, args);
 
@@ -30,10 +25,10 @@ public class Application {
 
     }
 
-    public static void setLatestImageName(String s){
+    static void setLatestImageName(String s){
         imageNames.push(s);
 
-        if (imageNames.size() > maxImages){
+        if (imageNames.size() > GlobalValues.MAX_IMAGES){
             System.out.println("Removing from history: " + imageNames.elementAt(0));
             imageNames.remove(0);
         }
@@ -41,11 +36,11 @@ public class Application {
         latestImageName = s;
     }
 
-    public static String getLatestImageName(){
+    static String getLatestImageName(){
         return latestImageName;
     }
 
-    public static void exitSpring(){
+    static void exitSpring(){
         Util.initiateShutdown(context, 1);
     }
 

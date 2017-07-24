@@ -41,7 +41,7 @@ public class Application {
         return latestImageName;
     }
 
-    static String getImage(String s){ return imageNames.elementAt(Integer.valueOf(s)); }
+    static String getImage(int i){ return imageNames.elementAt(i); }
 
     static int getTotalImages(){ return imageNames.size(); }
 

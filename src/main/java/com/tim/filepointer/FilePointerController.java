@@ -14,24 +14,39 @@ public class FilePointerController {
     @RequestMapping("/image")
     public FilePointer filePointer(@RequestParam(value="id", defaultValue="0") String id) {
 
-        int imageId;
+        if(GlobalValues.WEBCAM_ENABLED) {
 
-        if(id.equals("total")){
-            return new FilePointer(counter.incrementAndGet(), String.valueOf(Application.getTotalImages()));
-        } else {
+            int imageId;
+
             try {
                 imageId = Integer.parseInt(id);
-            } catch (NumberFormatException | NullPointerException e){
+            } catch (NumberFormatException | NullPointerException e) {
                 imageId = Application.getTotalImages() - 1;
             }
 
             return new FilePointer(counter.incrementAndGet(), Application.getImage(imageId));
+        } else {
+            return new FilePointer(counter.incrementAndGet(), "Not enabled.");
+        }
+
+    }
+
+    @RequestMapping("/total_images")
+    public FilePointer totalImages(){
+        if(GlobalValues.WEBCAM_ENABLED) {
+            return new FilePointer(counter.incrementAndGet(), String.valueOf(Application.getTotalImages()));
+        } else {
+            return new FilePointer(counter.incrementAndGet(), "Not enabled.");
         }
     }
 
     @RequestMapping("/latest_image")
-    public FilePointer filePointer() {
-        return new FilePointer(counter.incrementAndGet(), Application.getLatestImageName());
+    public FilePointer latestImage() {
+        if(GlobalValues.WEBCAM_ENABLED) {
+            return new FilePointer(counter.incrementAndGet(), Application.getLatestImageName());
+        } else {
+            return new FilePointer(counter.incrementAndGet(), "Not enabled.");
+        }
     }
 
 }

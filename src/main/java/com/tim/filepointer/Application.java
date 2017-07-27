@@ -1,5 +1,7 @@
 package com.tim.filepointer;
 
+import com.github.sarxos.webcam.Webcam;
+import com.github.sarxos.webcam.ds.v4l4j.V4l4jDriver;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
@@ -16,14 +18,23 @@ public class Application {
 
     public static void main(String[] args) {
 
-        imageNames = new Stack<>();
-
         context = SpringApplication.run(Application.class, args);
 
-        webcamRunner = new WebcamRunner(15000);
+        if(GlobalValues.WEBCAM_ENABLED) {
 
-        webcamRunner.run();
+            imageNames = new Stack<>();
 
+            webcamRunner = new WebcamRunner(15000);
+
+            webcamRunner.run();
+        }
+
+    }
+
+    static {
+        if(GlobalValues.WEBCAM_ENABLED) {
+            Webcam.setDriver(new V4l4jDriver());
+        }
     }
 
     static void setLatestImageName(String s){
@@ -49,5 +60,4 @@ public class Application {
         webcamRunner.stop();
         Util.initiateShutdown(context, 1);
     }
-
 }

@@ -142,8 +142,14 @@ public class WebcamRunner extends Application implements WebcamMotionListener, R
                     }
 
                     if (currentTimeMillis >= endTimeMillis) {
-                        System.out.println("Sending email...");
-                        Util.sendEmail(fileNames);
+                        if(GlobalValues.EMAIL_ENABLED) {
+                            System.out.println("Sending email...");
+                            Util.sendEmail(fileNames);
+                            fileNames.clear();
+                            motionDetected = false;
+                        } else {
+                            System.out.println("Email disabled.");
+                        }
                         fileNames.clear();
                         motionDetected = false;
                         return;

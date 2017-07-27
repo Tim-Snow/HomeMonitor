@@ -4,7 +4,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.io.File;
 import java.util.concurrent.atomic.AtomicLong;
 
 @RestController
@@ -15,24 +14,39 @@ public class FilePointerController {
     @RequestMapping("/image")
     public FilePointer filePointer(@RequestParam(value="id", defaultValue="0") String id) {
 
-        int imageId;
+        if(GlobalValues.WEBCAM_ENABLED) {
 
-        try {
-            imageId = Integer.parseInt(id);
-        } catch (NumberFormatException | NullPointerException e){
-            imageId = Application.getTotalImages() - 1;
+            int imageId;
+
+            try {
+                imageId = Integer.parseInt(id);
+            } catch (NumberFormatException | NullPointerException e) {
+                imageId = Application.getTotalImages() - 1;
+            }
+
+            return new FilePointer(counter.incrementAndGet(), Application.getImage(imageId));
+        } else {
+            return new FilePointer(counter.incrementAndGet(), "Not enabled.");
         }
 
-        if(id.equals("total")){
+    }
+
+    @RequestMapping("/total_images")
+    public FilePointer totalImages(){
+        if(GlobalValues.WEBCAM_ENABLED) {
             return new FilePointer(counter.incrementAndGet(), String.valueOf(Application.getTotalImages()));
         } else {
-            return new FilePointer(counter.incrementAndGet(), Application.getImage(imageId));
+            return new FilePointer(counter.incrementAndGet(), "Not enabled.");
         }
     }
 
     @RequestMapping("/latest_image")
-    public FilePointer filePointer() {
-        return new FilePointer(counter.incrementAndGet(), Application.getLatestImageName());
+    public FilePointer latestImage() {
+        if(GlobalValues.WEBCAM_ENABLED) {
+            return new FilePointer(counter.incrementAndGet(), Application.getLatestImageName());
+        } else {
+            return new FilePointer(counter.incrementAndGet(), "Not enabled.");
+        }
     }
 
 }

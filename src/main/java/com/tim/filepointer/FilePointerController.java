@@ -48,5 +48,10 @@ public class FilePointerController {
             return new FilePointer(counter.incrementAndGet(), "Not enabled.");
         }
     }
+//
+//    @RequestMapping("/error")
+//    public FilePointer error(){
+//        return new FilePointer(counter.incrementAndGet(), "Oops...");
+//    }
 
 }

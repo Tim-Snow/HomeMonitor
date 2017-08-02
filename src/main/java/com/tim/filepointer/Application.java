@@ -20,10 +20,9 @@ public class Application {
 
         context = SpringApplication.run(Application.class, args);
 
+        imageNames = new Stack<>();
+
         if(GlobalValues.WEBCAM_ENABLED) {
-
-            imageNames = new Stack<>();
-
             webcamRunner = new WebcamRunner(15000);
 
             webcamRunner.run();

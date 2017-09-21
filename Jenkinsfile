@@ -1,16 +1,16 @@
 node{
-  
-  stage 'Clone sources' {
-    steps {
-      git url: 'https://github.com/Tim-Snow/HomeMonitor.git'
-      checkout scm
-    }  
-  }
-  
-  stage 'build_Project' {
-    steps {
-      sh "./gradlew clean assemble"
+  stages {
+    stage 'Clone sources' {
+      steps {
+        git url: 'https://github.com/Tim-Snow/HomeMonitor.git'
+        checkout scm
+      }  
+    }
+
+    stage 'Build project' {
+      steps {
+        sh "./gradlew clean assemble"
+      }
     }
   }
-  
 }

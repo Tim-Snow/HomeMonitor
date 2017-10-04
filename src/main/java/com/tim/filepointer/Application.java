@@ -28,6 +28,8 @@ public class Application {
             webcamRunner.run();
         }
 
+        exitSpring();
+
     }
 
     static {

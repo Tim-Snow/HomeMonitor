@@ -15,9 +15,6 @@ import java.util.Vector;
 
 public class WebcamRunner extends Application implements WebcamMotionListener, Runnable {
 
-    private final int MOTION_TIME_TO_WAIT_BEFORE_EMAILING = 15000; //15 Seconds
-    private final int MOTION_CAPTURE_INTERVAL = 500; //0.5 Second
-
     private     boolean             running, motionDetected, newMotionDetected;
     private     long                delay, currentTimeMillis, nextImageTimeMillis, endTimeMillis;
     private     Webcam              webcam;
@@ -34,7 +31,7 @@ public class WebcamRunner extends Application implements WebcamMotionListener, R
         WebcamMotionDetector detector = new WebcamMotionDetector(webcam);
 
         webcam.setViewSize(new Dimension(640, 480));
-        detector.setInterval(MOTION_CAPTURE_INTERVAL);
+        detector.setInterval(GlobalValues.MOTION_CAPTURE_INTERVAL);
         detector.addMotionListener(this);
 
         webcam.open();
@@ -95,7 +92,7 @@ public class WebcamRunner extends Application implements WebcamMotionListener, R
         webcam.close();
     }
 
-    public void stop(){
+    void stop(){
         running = false;
     }
 
@@ -112,8 +109,8 @@ public class WebcamRunner extends Application implements WebcamMotionListener, R
             Vector<String> fileNames    = new Vector<>();
 
             currentTimeMillis           = System.currentTimeMillis();
-            endTimeMillis               = currentTimeMillis + MOTION_TIME_TO_WAIT_BEFORE_EMAILING;
-            nextImageTimeMillis         = currentTimeMillis + MOTION_CAPTURE_INTERVAL;
+            endTimeMillis               = currentTimeMillis + GlobalValues.MOTION_TIME_TO_WAIT_BEFORE_EMAILING;
+            nextImageTimeMillis         = currentTimeMillis + GlobalValues.MOTION_CAPTURE_INTERVAL;
 
             Runnable runnable = () -> {
 
@@ -126,7 +123,7 @@ public class WebcamRunner extends Application implements WebcamMotionListener, R
 
                         newMotionDetected = false;
 
-                        nextImageTimeMillis = currentTimeMillis + MOTION_CAPTURE_INTERVAL;
+                        nextImageTimeMillis = currentTimeMillis + GlobalValues.MOTION_CAPTURE_INTERVAL;
                         String fileName     = createFileName(localDateTime, true, localDateTime.getSecond());
 
 
@@ -154,7 +151,6 @@ public class WebcamRunner extends Application implements WebcamMotionListener, R
                         motionDetected = false;
                         return;
                     }
-
                 }
             };
 
@@ -163,5 +159,4 @@ public class WebcamRunner extends Application implements WebcamMotionListener, R
 
         }
     }
-
 }

@@ -15,12 +15,12 @@ import java.util.Vector;
 
 public class WebcamRunner extends Application implements WebcamMotionListener, Runnable {
 
-    private     boolean             running, motionDetected, newMotionDetected;
-    private     long                delay, currentTimeMillis, nextImageTimeMillis, endTimeMillis;
-    private     Webcam              webcam;
-    private     LocalDateTime       localDateTime;
+    private boolean running, motionDetected, newMotionDetected;
+    private long delay, currentTimeMillis, nextImageTimeMillis, endTimeMillis;
+    private Webcam webcam;
+    private LocalDateTime localDateTime;
 
-    WebcamRunner(long delay){
+    WebcamRunner(long delay) {
 
         this.delay = delay;
 
@@ -39,8 +39,8 @@ public class WebcamRunner extends Application implements WebcamMotionListener, R
 
     }
 
-    private String createFileName(LocalDateTime ldt, boolean motion, int id){
-        if(motion){
+    private String createFileName(LocalDateTime ldt, boolean motion, int id) {
+        if (motion) {
             return "images/" + "MOTION_" + String.format("%02d", ldt.getHour()) + "-" + String.format("%02d", ldt.getMinute()) +
                     "-" + String.format("%02d", ldt.getSecond()) + "_" + String.format("%02d", ldt.getDayOfMonth()) + "-" + String.format("%02d", ldt.getMonthValue()) +
                     "-" + String.format("%02d", ldt.getYear()) + "_" + Integer.toString(id) + ".jpg";
@@ -51,28 +51,28 @@ public class WebcamRunner extends Application implements WebcamMotionListener, R
         }
     }
 
-    public void run(){
+    public void run() {
         running = true;
 
         Long delayTimeMillis = System.currentTimeMillis();
 
-        while(running) {
+        while (running) {
 
-            if(System.currentTimeMillis() >= delayTimeMillis) {
+            if (System.currentTimeMillis() >= delayTimeMillis) {
 
-                delayTimeMillis= System.currentTimeMillis() + delay;
+                delayTimeMillis = System.currentTimeMillis() + delay;
 
                 localDateTime = LocalDateTime.now(ZoneId.of("Europe/London"));
 
                 String fileName = "";
 
-                if (Util.isBetween(localDateTime.getSecond(), 0, 14)){
+                if (Util.isBetween(localDateTime.getSecond(), 0, 14)) {
                     fileName = createFileName(localDateTime, false, 0);
-                } else if (Util.isBetween(localDateTime.getSecond(), 15, 29)){
+                } else if (Util.isBetween(localDateTime.getSecond(), 15, 29)) {
                     fileName = createFileName(localDateTime, false, 1);
-                } else if (Util.isBetween(localDateTime.getSecond(), 30, 44)){
+                } else if (Util.isBetween(localDateTime.getSecond(), 30, 44)) {
                     fileName = createFileName(localDateTime, false, 2);
-                } else if (Util.isBetween(localDateTime.getSecond(), 45, 60)){
+                } else if (Util.isBetween(localDateTime.getSecond(), 45, 60)) {
                     fileName = createFileName(localDateTime, false, 3);
                 }
 
@@ -92,7 +92,7 @@ public class WebcamRunner extends Application implements WebcamMotionListener, R
         webcam.close();
     }
 
-    void stop(){
+    void stop() {
         running = false;
     }
 
@@ -101,22 +101,22 @@ public class WebcamRunner extends Application implements WebcamMotionListener, R
 
         newMotionDetected = true;
 
-        if(!motionDetected && running) {
+        if (!motionDetected && running) {
 
             System.out.println("MOTION DETECTED");
             motionDetected = true;
 
-            Vector<String> fileNames    = new Vector<>();
+            Vector<String> fileNames = new Vector<>();
 
-            currentTimeMillis           = System.currentTimeMillis();
-            endTimeMillis               = currentTimeMillis + GlobalValues.MOTION_TIME_TO_WAIT_BEFORE_EMAILING;
-            nextImageTimeMillis         = currentTimeMillis + GlobalValues.MOTION_CAPTURE_INTERVAL;
+            currentTimeMillis = System.currentTimeMillis();
+            endTimeMillis = currentTimeMillis + GlobalValues.MOTION_TIME_TO_WAIT_BEFORE_EMAILING;
+            nextImageTimeMillis = currentTimeMillis + GlobalValues.MOTION_CAPTURE_INTERVAL;
 
             Runnable runnable = () -> {
 
-                while(true) {
+                while (true) {
 
-                    localDateTime     = LocalDateTime.now(ZoneId.of("Europe/London"));
+                    localDateTime = LocalDateTime.now(ZoneId.of("Europe/London"));
                     currentTimeMillis = System.currentTimeMillis();
 
                     if (currentTimeMillis >= nextImageTimeMillis && newMotionDetected) {
@@ -124,7 +124,7 @@ public class WebcamRunner extends Application implements WebcamMotionListener, R
                         newMotionDetected = false;
 
                         nextImageTimeMillis = currentTimeMillis + GlobalValues.MOTION_CAPTURE_INTERVAL;
-                        String fileName     = createFileName(localDateTime, true, localDateTime.getSecond());
+                        String fileName = createFileName(localDateTime, true, localDateTime.getSecond());
 
 
                         try {
@@ -139,7 +139,7 @@ public class WebcamRunner extends Application implements WebcamMotionListener, R
                     }
 
                     if (currentTimeMillis >= endTimeMillis) {
-                        if(GlobalValues.EMAIL_ENABLED) {
+                        if (GlobalValues.EMAIL_ENABLED) {
                             System.out.println("Sending email...");
                             Util.sendEmail(fileNames);
                             fileNames.clear();

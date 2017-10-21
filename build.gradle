@@ -28,7 +28,7 @@ sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 dependencies {
-    providedRuntime 'org.springframework.boot:spring-boot-starter-tomcat'
+    compile 'org.springframework.boot:spring-boot-starter-tomcat'
     compile("org.springframework.boot:spring-boot-starter-web", 'com.github.sarxos:webcam-capture:0.3.10', 'javax.mail:mail:1.4.7')
     compile group: 'com.github.sarxos', name: 'webcam-capture-driver-v4l4j', version: '0.3.11'
     testCompile('org.springframework.boot:spring-boot-starter-test')

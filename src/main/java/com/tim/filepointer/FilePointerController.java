@@ -31,7 +31,7 @@ public class FilePointerController {
 
             return buildResponse(fileService.getImage(imageId));
         } else {
-            return buildResponse("Not enabled.");
+            return buildResponse("Webcam not enabled.");
         }
     }
 
@@ -40,7 +40,7 @@ public class FilePointerController {
         if(GlobalValues.WEBCAM_ENABLED) {
             return buildResponse(String.valueOf(fileService.getTotalImages()));
         } else {
-            return buildResponse("Not enabled.");
+            return buildResponse("Webcam not enabled.");
         }
     }
 
@@ -49,15 +49,19 @@ public class FilePointerController {
         if(GlobalValues.WEBCAM_ENABLED) {
             return buildResponse(fileService.getLatestImageName());
         } else {
-            return buildResponse("Not enabled.");
+            return buildResponse("Webcam not enabled.");
         }
     }
 
     @GetMapping(value = "/get_latest_image", produces = MediaType.IMAGE_JPEG_VALUE)
     public ResponseEntity<byte[]> getLatestImage(HttpServletRequest request) throws Exception {
-        File fi = new File("images/a.jpeg");
-        byte[] image = Files.readAllBytes(fi.toPath());
+        if(GlobalValues.WEBCAM_ENABLED) {
+            File fi = new File(fileService.getLatestImageName());
+            byte[] image = Files.readAllBytes(fi.toPath());
         return ResponseEntity.ok().contentType(MediaType.IMAGE_JPEG).body(image);
+        } else {
+            throw new Exception("Webcam not enabled.");
+        }
     }
 
     private Map<String, String> buildResponse(String response){

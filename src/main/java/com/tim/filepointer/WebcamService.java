@@ -32,7 +32,7 @@ public class WebcamService extends Application implements WebcamMotionListener {
     private Webcam webcam;
     private LocalDateTime localDateTime;
 
-    public WebcamService() {    }
+    public WebcamService() { }
 
     @PostConstruct
     public void init() {
@@ -110,11 +110,7 @@ public class WebcamService extends Application implements WebcamMotionListener {
 
         webcam.close();
     }
-
-    void stop() {
-        running = false;
-    }
-
+    
     @Override
     public void motionDetected(WebcamMotionEvent wme) {
 

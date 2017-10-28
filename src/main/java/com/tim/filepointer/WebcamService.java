@@ -4,7 +4,11 @@ import com.github.sarxos.webcam.Webcam;
 import com.github.sarxos.webcam.WebcamMotionDetector;
 import com.github.sarxos.webcam.WebcamMotionEvent;
 import com.github.sarxos.webcam.WebcamMotionListener;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.io.File;
@@ -13,16 +17,27 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Vector;
 
-public class WebcamRunner extends Application implements WebcamMotionListener, Runnable {
+@Component
+@EnableAutoConfiguration
+public class WebcamService extends Application implements WebcamMotionListener {
+
+    @Autowired
+    private FileService fileService;
+
+    @Autowired
+    private EmailService emailService;
 
     private boolean running, motionDetected, newMotionDetected;
     private long delay, currentTimeMillis, nextImageTimeMillis, endTimeMillis;
     private Webcam webcam;
     private LocalDateTime localDateTime;
 
-    WebcamRunner(long delay) {
+    public WebcamService() {    }
 
-        this.delay = delay;
+    @PostConstruct
+    public void init() {
+
+        this.delay = 15000;
 
         motionDetected = false;
         newMotionDetected = false;
@@ -36,6 +51,10 @@ public class WebcamRunner extends Application implements WebcamMotionListener, R
 
         webcam.open();
         detector.start();
+
+        Runnable startWebcamService = this::start;
+
+        new Thread(startWebcamService).start();
 
     }
 
@@ -51,7 +70,7 @@ public class WebcamRunner extends Application implements WebcamMotionListener, R
         }
     }
 
-    public void run() {
+    public void start() {
         running = true;
 
         Long delayTimeMillis = System.currentTimeMillis();
@@ -78,7 +97,7 @@ public class WebcamRunner extends Application implements WebcamMotionListener, R
 
                 File file = new File(fileName);
                 System.out.println("New image: " + fileName);
-                Application.setLatestImageName(fileName);
+                fileService.setLatestImageName(fileName);
 
                 try {
                     ImageIO.write(webcam.getImage(), "JPG", file);
@@ -131,7 +150,7 @@ public class WebcamRunner extends Application implements WebcamMotionListener, R
                             File file = new File(fileName);
                             ImageIO.write(webcam.getImage(), "JPG", file);
                             System.out.println("New image: " + fileName);
-                            Application.setLatestImageName(fileName);
+                            fileService.setLatestImageName(fileName);
                             fileNames.add(fileName);
                         } catch (IOException e) {
                             e.printStackTrace();
@@ -141,7 +160,7 @@ public class WebcamRunner extends Application implements WebcamMotionListener, R
                     if (currentTimeMillis >= endTimeMillis) {
                         if (GlobalValues.EMAIL_ENABLED) {
                             System.out.println("Sending email...");
-                            Util.sendEmail(fileNames);
+                            emailService.sendEmail(fileNames);
                             fileNames.clear();
                             motionDetected = false;
                         } else {

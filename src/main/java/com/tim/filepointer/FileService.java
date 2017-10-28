@@ -5,14 +5,9 @@ import org.springframework.stereotype.Component;
 import java.util.Stack;
 
 @Component
-public class FileService {
+class FileService {
 
-    private static String latestImageName = "";
-    private static Stack<String> imageNames;
-
-    public FileService() {
-        imageNames = new Stack<>();
-    }
+    private Stack<String> imageNames = new Stack<>();
 
     void setLatestImageName(String s) {
         imageNames.push(s);
@@ -21,16 +16,14 @@ public class FileService {
             System.out.println("Removing from history: " + imageNames.elementAt(0));
             imageNames.remove(0);
         }
-
-        latestImageName = s;
     }
 
     String getLatestImageName() {
-        return latestImageName;
+        return imageNames.peek();
     }
 
-    String getImage(int i) {
-        return imageNames.elementAt(i);
+    Stack<String> getAllImageNames() {
+        return imageNames;
     }
 
     int getTotalImages() {

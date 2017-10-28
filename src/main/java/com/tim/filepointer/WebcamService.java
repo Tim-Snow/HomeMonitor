@@ -19,7 +19,7 @@ import java.util.Vector;
 
 @Component
 @EnableAutoConfiguration
-public class WebcamService extends Application implements WebcamMotionListener {
+class WebcamService extends Application implements WebcamMotionListener {
 
     @Autowired
     private FileService fileService;
@@ -31,8 +31,6 @@ public class WebcamService extends Application implements WebcamMotionListener {
     private long delay, currentTimeMillis, nextImageTimeMillis, endTimeMillis;
     private Webcam webcam;
     private LocalDateTime localDateTime;
-
-    public WebcamService() { }
 
     @PostConstruct
     public void init() {
@@ -60,17 +58,17 @@ public class WebcamService extends Application implements WebcamMotionListener {
 
     private String createFileName(LocalDateTime ldt, boolean motion, int id) {
         if (motion) {
-            return "images/" + "MOTION_" + String.format("%02d", ldt.getHour()) + "-" + String.format("%02d", ldt.getMinute()) +
+            return "MOTION_" + String.format("%02d", ldt.getHour()) + "-" + String.format("%02d", ldt.getMinute()) +
                     "-" + String.format("%02d", ldt.getSecond()) + "_" + String.format("%02d", ldt.getDayOfMonth()) + "-" + String.format("%02d", ldt.getMonthValue()) +
-                    "-" + String.format("%02d", ldt.getYear()) + "_" + Integer.toString(id) + ".jpg";
+                    "-" + String.format("%02d", ldt.getYear()) + "_" + Integer.toString(id);
         } else {
-            return "images/" + String.format("%02d", ldt.getHour()) + "-" + String.format("%02d", ldt.getMinute()) +
+            return String.format("%02d", ldt.getHour()) + "-" + String.format("%02d", ldt.getMinute()) +
                     "_" + String.format("%02d", ldt.getDayOfMonth()) + "-" + String.format("%02d", ldt.getMonthValue()) +
-                    "-" + String.format("%02d", ldt.getYear()) + "_" + Integer.toString(id) + ".jpg";
+                    "-" + String.format("%02d", ldt.getYear()) + "_" + Integer.toString(id);
         }
     }
 
-    public void start() {
+    private void start() {
         running = true;
 
         Long delayTimeMillis = System.currentTimeMillis();
@@ -95,9 +93,9 @@ public class WebcamService extends Application implements WebcamMotionListener {
                     fileName = createFileName(localDateTime, false, 3);
                 }
 
-                File file = new File(fileName);
-                System.out.println("New image: " + fileName);
                 fileService.setLatestImageName(fileName);
+                System.out.println("New image: " + fileName);
+                File file = new File("images/" + fileName + ".jpg");
 
                 try {
                     ImageIO.write(webcam.getImage(), "JPG", file);
@@ -110,7 +108,7 @@ public class WebcamService extends Application implements WebcamMotionListener {
 
         webcam.close();
     }
-    
+
     @Override
     public void motionDetected(WebcamMotionEvent wme) {
 

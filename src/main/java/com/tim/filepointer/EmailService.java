@@ -13,9 +13,9 @@ import java.util.Properties;
 import java.util.Vector;
 
 @Component
-public class EmailService {
+class EmailService {
 
-    static void sendEmail(Vector<String> imageNames) {
+    void sendEmail(Vector<String> imageNames) {
 
         final String username = GlobalValues.EMAIL_ADDRESS;
 
@@ -42,7 +42,7 @@ public class EmailService {
 
             Multipart multipart = new MimeMultipart();
 
-            for(String str : imageNames){
+            for (String str : imageNames) {
 
                 MimeBodyPart mimeBodyPart = new MimeBodyPart();
                 mimeBodyPart.setFileName(str);

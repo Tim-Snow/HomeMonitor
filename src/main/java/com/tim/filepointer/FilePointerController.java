@@ -1,5 +1,6 @@
 package com.tim.filepointer;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,6 +16,9 @@ import java.util.Map;
 @RestController
 public class FilePointerController {
 
+    @Autowired
+    private FileService fileService;
+
     @GetMapping("/image_name/{id}")
     public Map<String, String> imageName(@RequestParam(value="id", defaultValue="0") String id) {
         if(GlobalValues.WEBCAM_ENABLED) {
@@ -22,38 +26,42 @@ public class FilePointerController {
             try {
                 imageId = Integer.parseInt(id);
             } catch (NumberFormatException | NullPointerException e) {
-                imageId = Application.getTotalImages() - 1;
+                imageId = fileService.getTotalImages() - 1;
             }
 
-            return buildResponse(Application.getImage(imageId));
+            return buildResponse(fileService.getImage(imageId));
         } else {
-            return buildResponse("Not enabled.");
+            return buildResponse("Webcam not enabled.");
         }
     }
 
     @GetMapping("/total_image_count")
     public Map<String, String> totalImages(){
         if(GlobalValues.WEBCAM_ENABLED) {
-            return buildResponse(String.valueOf(Application.getTotalImages()));
+            return buildResponse(String.valueOf(fileService.getTotalImages()));
         } else {
-            return buildResponse("Not enabled.");
+            return buildResponse("Webcam not enabled.");
         }
     }
 
     @GetMapping("/latest_image_name")
     public Map<String, String> latestImageName() {
         if(GlobalValues.WEBCAM_ENABLED) {
-            return buildResponse(Application.getLatestImageName());
+            return buildResponse(fileService.getLatestImageName());
         } else {
-            return buildResponse("Not enabled.");
+            return buildResponse("Webcam not enabled.");
         }
     }
 
     @GetMapping(value = "/get_latest_image", produces = MediaType.IMAGE_JPEG_VALUE)
     public ResponseEntity<byte[]> getLatestImage(HttpServletRequest request) throws Exception {
-        File fi = new File("images/a.jpeg");
-        byte[] image = Files.readAllBytes(fi.toPath());
+        if(GlobalValues.WEBCAM_ENABLED) {
+            File fi = new File(fileService.getLatestImageName());
+            byte[] image = Files.readAllBytes(fi.toPath());
         return ResponseEntity.ok().contentType(MediaType.IMAGE_JPEG).body(image);
+        } else {
+            throw new Exception("Webcam not enabled.");
+        }
     }
 
     private Map<String, String> buildResponse(String response){

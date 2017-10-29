@@ -7,22 +7,22 @@ import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
-public class CaptureRunnable implements Callable {
+public class CaptureCallable implements Callable {
 
     private FileService fileService;
     private Webcam webcam;
-    private boolean motionMode;
+    private String fileNamePrefix;
 
-    CaptureRunnable(FileService fileService, Webcam webcam, boolean motionMode) {
+    CaptureCallable(FileService fileService, Webcam webcam, String fileNamePrefix) {
         this.fileService = fileService;
         this.webcam = webcam;
-        this.motionMode = motionMode;
+        this.fileNamePrefix = fileNamePrefix;
     }
 
     private String captureImage() {
         String fileName;
 
-        fileName = Util.createImageName(motionMode);
+        fileName = Util.createImageName(fileNamePrefix);
         fileService.addToImageNames(fileName);
         File file = new File(Util.fileNameBuilder(fileName));
 
@@ -32,7 +32,8 @@ public class CaptureRunnable implements Callable {
             e.printStackTrace();
         }
 
-        return "New image: " + fileName;
+        System.out.println("New image: " + fileName);
+        return fileName;
     }
 
     @Override

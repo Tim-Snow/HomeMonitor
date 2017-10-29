@@ -16,7 +16,7 @@ class Util {
         SpringApplication.exit(context, () -> returnCode);
     }
 
-    static void cleanImageDirectory() {
+    private static void cleanImageDirectory() {
         System.out.println("FILE CLEAN UP");
         File[] files = new File("images").listFiles();
 
@@ -36,17 +36,13 @@ class Util {
         return "images\\" + fileName + ".jpg";
     }
 
-    static String createImageName(boolean motionDetected) {
+    static String createImageName(String prefix) {
         LocalDateTime localDateTime = LocalDateTime.now(ZoneId.of("Europe/London"));
 
-        if (motionDetected) {
-            return "MOTION_" + formatImageName(localDateTime);
-        } else {
-            return formatImageName(localDateTime);
-        }
+        return prefix + formatImageName(localDateTime);
     }
 
-    static String formatImageName(LocalDateTime ldt) {
+    private static String formatImageName(LocalDateTime ldt) {
         return formatTime(ldt.getHour(), ldt.getMinute(), ldt.getSecond()) + "_" +
                 formatDate(ldt.getDayOfMonth(), ldt.getMonthValue(), ldt.getYear());
     }
@@ -59,26 +55,8 @@ class Util {
         return String.format("%02d", hour) + "-" + String.format("%02d", minute) + "-" + String.format("%02d", second);
     }
 
-    static boolean isBetween(int x, int lower, int upper) {
-        return lower <= x && x <= upper;
-    }
-
-    static Map<String, String> buildResponse(String response) {
-        return Collections.singletonMap("response", response);
-    }
-
     static Map<String, String> buildResponse(String key, String response) {
         return Collections.singletonMap(key, response);
-    }
-
-    static Map<String, String> buildMultiResponse(Vector<String> responses) {
-        HashMap<String, String> responseMap = new HashMap<>();
-
-        for (int i = 0; i < responses.size(); i++) {
-            responseMap.put("response " + i, responses.get(i));
-        }
-
-        return responseMap;
     }
 
     static Map<String, String> buildMultiResponse(String key, Stack<String> responses) {

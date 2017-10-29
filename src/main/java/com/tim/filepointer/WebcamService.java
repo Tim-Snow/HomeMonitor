@@ -10,17 +10,14 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import javax.imageio.ImageIO;
 import java.awt.*;
-import java.io.File;
-import java.io.IOException;
 import java.util.TimerTask;
 import java.util.Vector;
 import java.util.concurrent.*;
 
 @Component
 @EnableAutoConfiguration
-class WebcamService extends Application implements WebcamMotionListener {
+class WebcamService implements WebcamMotionListener {
 
     @Autowired
     private FileService fileService;
@@ -30,7 +27,7 @@ class WebcamService extends Application implements WebcamMotionListener {
 
     private Webcam webcam;
     private Vector<String> currentMotionFileNames = new Vector<>();
-    private Callable regularCaptureCallable, motionCaptureCallable;
+    private Callable regularCaptureCallable, motionCaptureCallable, manualCaptureCallable;
     private ScheduledFuture<?> regularFuture, motionFuture;
     private ScheduledExecutorService executor;
     private boolean motionDetectionRunning = false;
@@ -40,23 +37,12 @@ class WebcamService extends Application implements WebcamMotionListener {
     public void init() {
         setupWebcam();
 
-        motionCaptureCallable = new CaptureRunnable(fileService, webcam, true);
-        regularCaptureCallable = new CaptureRunnable(fileService, webcam, false);
-
-        TimerTask task = new TimerTask() {
-
-            @Override
-            public void run() {
-                try {
-                    System.out.println(regularCaptureCallable.call());
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        };
+        regularCaptureCallable = new CaptureCallable(fileService, webcam, "");
+        motionCaptureCallable = new CaptureCallable(fileService, webcam, "MOTION_");
+        manualCaptureCallable = new CaptureCallable(fileService, webcam, "MANUAL_");
 
         executor = new ScheduledThreadPoolExecutor(0);
-        regularFuture = executor.scheduleAtFixedRate(task, 0, GlobalValues.CAPTURE_INTERVAL, TimeUnit.SECONDS);
+        regularFuture = executor.scheduleAtFixedRate(getRegularTask(), 0, GlobalValues.CAPTURE_INTERVAL, TimeUnit.SECONDS);
     }
 
     @SuppressWarnings("unused")
@@ -88,27 +74,7 @@ class WebcamService extends Application implements WebcamMotionListener {
 
             motionDetectionRunning = true;
 
-            TimerTask task = new TimerTask() {
-
-                int iterations = 0;
-
-                @Override
-                public void run() {
-                    try {
-                        if (iterations < GlobalValues.MOTION_NUM_IMAGES_BEFORE_EMAILING) {
-                            iterations++;
-                            motionCaptureCallable.call();
-                            System.out.println(motionCaptureCallable.call());
-                        } else {
-                            sendEmailAndCleanup();
-                        }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-            };
-
-            motionFuture = executor.scheduleAtFixedRate(task, 0, 1, TimeUnit.SECONDS);
+            motionFuture = executor.scheduleAtFixedRate(getMotionTask(), 0, GlobalValues.MOTION_CAPTURE_INTERVAL, TimeUnit.MILLISECONDS);
         }
     }
 
@@ -124,20 +90,47 @@ class WebcamService extends Application implements WebcamMotionListener {
         motionFuture.cancel(true);
     }
 
-    public String manualCapture() {
-        String fileName;
-
-        fileName = "MANUAL_" + Util.createImageName(false);
-        fileService.addToImageNames(fileName);
-        File file = new File(Util.fileNameBuilder(fileName));
-        System.out.println("Manual capture: " + fileName);
-
+    String manualCapture() {
+        String fileName = "";
         try {
-            ImageIO.write(webcam.getImage(), "JPG", file);
-        } catch (IOException | NullPointerException e) {
+            fileName = (String) manualCaptureCallable.call();
+        } catch (Exception e) {
             e.printStackTrace();
         }
 
         return fileName;
+    }
+
+    private TimerTask getRegularTask() {
+        return new TimerTask() {
+            @Override
+            public void run() {
+                try {
+                    regularCaptureCallable.call();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+    }
+
+    private TimerTask getMotionTask() {
+        return new TimerTask() {
+            int iterations = 0;
+
+            @Override
+            public void run() {
+                try {
+                    if (iterations < GlobalValues.MOTION_NUM_IMAGES_BEFORE_EMAILING) {
+                        iterations++;
+                        currentMotionFileNames.add((String) motionCaptureCallable.call());
+                    } else {
+                        sendEmailAndCleanup();
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        };
     }
 }

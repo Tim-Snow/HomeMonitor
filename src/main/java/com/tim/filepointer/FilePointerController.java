@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.util.Map;
 
 @RestController
@@ -17,6 +18,9 @@ public class FilePointerController {
 
     @Autowired
     private FileService fileService;
+
+    @Autowired
+    private WebcamService webcamService;
 
     @GetMapping("/total_images")
     public Map<String, String> getTotalImages() {
@@ -41,10 +45,10 @@ public class FilePointerController {
         }
     }
 
-    @GetMapping(value = "/image/latest", produces = MediaType.IMAGE_JPEG_VALUE)
-    public ResponseEntity<byte[]> getLatestImage(HttpServletRequest request) throws Exception {
+    @GetMapping(value = "/image/manual_capture", produces = MediaType.IMAGE_JPEG_VALUE)
+    public ResponseEntity<byte[]> getImageManually(HttpServletRequest request) throws Exception {
         if (GlobalValues.WEBCAM_ENABLED) {
-            File file = new File("images/" + fileService.getLatestImageName() + ".jpg");
+            File file = new File(Util.fileNameBuilder(webcamService.manualCapture()));
             byte[] image = Files.readAllBytes(file.toPath());
             return ResponseEntity.ok().contentType(MediaType.IMAGE_JPEG).body(image);
         } else {
@@ -52,12 +56,27 @@ public class FilePointerController {
         }
     }
 
-    @GetMapping(value = "/image/{filename}", produces = MediaType.IMAGE_JPEG_VALUE)
-    public ResponseEntity<byte[]> getImageByFilename(HttpServletRequest request, @PathVariable("filename") String filename) throws Exception {
+    @GetMapping(value = "/image/latest", produces = MediaType.IMAGE_JPEG_VALUE)
+    public ResponseEntity<byte[]> getLatestImage(HttpServletRequest request) throws Exception {
         if (GlobalValues.WEBCAM_ENABLED) {
-            File file = new File("images\\" + filename + ".jpg");
+            File file = new File(Util.fileNameBuilder(fileService.getLatestImageName()));
             byte[] image = Files.readAllBytes(file.toPath());
             return ResponseEntity.ok().contentType(MediaType.IMAGE_JPEG).body(image);
+        } else {
+            throw new Exception("Webcam not enabled.");
+        }
+    }
+
+    @GetMapping(value = "/image/{fileName}", produces = MediaType.IMAGE_JPEG_VALUE)
+    public ResponseEntity<byte[]> getImageByFilename(HttpServletRequest request, @PathVariable("fileName") String fileName) throws Exception {
+        if (GlobalValues.WEBCAM_ENABLED) {
+            try {
+                File file = new File(Util.fileNameBuilder(fileName));
+                byte[] image = Files.readAllBytes(file.toPath());
+                return ResponseEntity.ok().contentType(MediaType.IMAGE_JPEG).body(image);
+            } catch (NoSuchFileException e) {
+                throw new Exception("File not found.");
+            }
         } else {
             throw new Exception("Webcam not enabled.");
         }

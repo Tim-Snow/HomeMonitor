@@ -9,7 +9,8 @@ class FileService {
 
     private Stack<String> imageNames = new Stack<>();
 
-    public FileService() { }
+    public FileService() {
+    }
 
     void addToImageNames(String imageName) {
         imageNames.push(imageName);

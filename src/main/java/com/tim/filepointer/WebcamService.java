@@ -14,7 +14,6 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
-import java.util.Timer;
 import java.util.TimerTask;
 import java.util.Vector;
 import java.util.concurrent.*;
@@ -31,42 +30,42 @@ class WebcamService extends Application implements WebcamMotionListener {
 
     private Webcam webcam;
     private Vector<String> currentMotionFileNames = new Vector<>();
-    private Thread motionCaptureThread;
-    private Callable webcamCallable;
+    private Callable regularCaptureCallable, motionCaptureCallable;
+    private ScheduledFuture<?> regularFuture, motionFuture;
     private ScheduledExecutorService executor;
-    private volatile boolean motionDetectionRunning = false;
+    private boolean motionDetectionRunning = false;
 
-    @PostConstruct
     @SuppressWarnings("unused")
+    @PostConstruct
     public void init() {
-        Webcam.getDefault().close();
         setupWebcam();
 
-        webcamCallable = new CaptureRunnable(fileService, webcam);
-        Timer timer = new Timer();
+        motionCaptureCallable = new CaptureRunnable(fileService, webcam, true);
+        regularCaptureCallable = new CaptureRunnable(fileService, webcam, false);
+
         TimerTask task = new TimerTask() {
 
             @Override
             public void run() {
                 try {
-                    System.out.println(webcamCallable.call());
+                    System.out.println(regularCaptureCallable.call());
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
         };
 
-        executor = new ScheduledThreadPoolExecutor(4);
-        ScheduledFuture<?> future = executor.scheduleAtFixedRate(task, 0, 15, TimeUnit.SECONDS);
+        executor = new ScheduledThreadPoolExecutor(0);
+        regularFuture = executor.scheduleAtFixedRate(task, 0, GlobalValues.CAPTURE_INTERVAL, TimeUnit.SECONDS);
     }
 
-    @PreDestroy
     @SuppressWarnings("unused")
-    public void cleanup(){
+    @PreDestroy
+    public void cleanup() {
         System.out.println("WEBCAM CLEAN UP");
-        motionDetectionRunning = false;
+        motionFuture.cancel(true);
+        regularFuture.cancel(true);
         executor.shutdown();
-        motionCaptureThread.interrupt();
         webcam.close();
     }
 
@@ -84,48 +83,33 @@ class WebcamService extends Application implements WebcamMotionListener {
 
     @Override
     public void motionDetected(WebcamMotionEvent wme) {
-        if (motionCaptureThread == null) {
-            motionDetectionRunning = true;
+        if (!motionDetectionRunning) {
             System.out.println(">>>MOTION DETECTED<<<");
-            motionCaptureThread = new Thread(motionDetectionRunnable());
-            motionCaptureThread.start();
-        }
-    }
 
-    private void captureImage() {
-        String fileName;
+            motionDetectionRunning = true;
 
-        fileName = Util.createImageName(true);
-        currentMotionFileNames.add(fileName);
+            TimerTask task = new TimerTask() {
 
-        fileService.addToImageNames(fileName);
-        File file = new File(Util.fileNameBuilder(fileName));
-        System.out.println("New image: " + fileName);
+                int iterations = 0;
 
-        try {
-            ImageIO.write(webcam.getImage(), "JPG", file);
-        } catch (IOException | NullPointerException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private Runnable motionDetectionRunnable() {
-        long endTimeMillis = System.currentTimeMillis() + GlobalValues.MOTION_TIME_TO_WAIT_BEFORE_EMAILING;
-
-        return () -> {
-            while (motionDetectionRunning) {
-                captureImage();
-
-                try {
-                    motionCaptureThread.sleep(GlobalValues.MOTION_CAPTURE_INTERVAL);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+                @Override
+                public void run() {
+                    try {
+                        if (iterations < GlobalValues.MOTION_NUM_IMAGES_BEFORE_EMAILING) {
+                            iterations++;
+                            motionCaptureCallable.call();
+                            System.out.println(motionCaptureCallable.call());
+                        } else {
+                            sendEmailAndCleanup();
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
+            };
 
-                if (System.currentTimeMillis() >= endTimeMillis)
-                    sendEmailAndCleanup();
-            }
-        };
+            motionFuture = executor.scheduleAtFixedRate(task, 0, 1, TimeUnit.SECONDS);
+        }
     }
 
     private void sendEmailAndCleanup() {
@@ -136,7 +120,24 @@ class WebcamService extends Application implements WebcamMotionListener {
             System.out.println("Email disabled.");
 
         motionDetectionRunning = false;
-        motionCaptureThread = null;
         currentMotionFileNames.clear();
+        motionFuture.cancel(true);
+    }
+
+    public String manualCapture() {
+        String fileName;
+
+        fileName = "MANUAL_" + Util.createImageName(false);
+        fileService.addToImageNames(fileName);
+        File file = new File(Util.fileNameBuilder(fileName));
+        System.out.println("Manual capture: " + fileName);
+
+        try {
+            ImageIO.write(webcam.getImage(), "JPG", file);
+        } catch (IOException | NullPointerException e) {
+            e.printStackTrace();
+        }
+
+        return fileName;
     }
 }

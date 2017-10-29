@@ -16,15 +16,15 @@ class Util {
         SpringApplication.exit(context, () -> returnCode);
     }
 
-    static void cleanImageDirectory(){
+    static void cleanImageDirectory() {
         System.out.println("FILE CLEAN UP");
         File[] files = new File("images").listFiles();
 
-        if(files != null)
-            for(File file: files)
-                if(file.isFile())
+        if (files != null)
+            for (File file : files)
+                if (file.isFile())
                     if (file.getName().endsWith(".jpg"))
-                        if(file.getName().startsWith("MOTION")) {
+                        if (file.getName().startsWith("MOTION")) {
                             file.renameTo(new File("images/motion_storage" + file.getName()));
                         } else {
                             System.out.println("DELETING: " + file.getName());
@@ -40,27 +40,17 @@ class Util {
         LocalDateTime localDateTime = LocalDateTime.now(ZoneId.of("Europe/London"));
 
         if (motionDetected) {
-            return "MOTION_" + formatImageName(localDateTime, localDateTime.getSecond());
+            return "MOTION_" + formatImageName(localDateTime);
         } else {
-            if (isBetween(localDateTime.getSecond(), 0, 14)) {
-                return formatImageName(localDateTime, 0);
-            } else if (isBetween(localDateTime.getSecond(), 15, 29)) {
-                return formatImageName(localDateTime, 1);
-            } else if (isBetween(localDateTime.getSecond(), 30, 44)) {
-                return formatImageName(localDateTime, 2);
-            } else if (isBetween(localDateTime.getSecond(), 45, 60)) {
-                return formatImageName(localDateTime, 3);
-            } else {
-                return formatImageName(localDateTime, 9);
-            }
+            return formatImageName(localDateTime);
         }
     }
 
-    static String formatImageName(LocalDateTime ldt, int id) {
-        return  formatTime(ldt.getHour(), ldt.getMinute(), ldt.getSecond()) + "_" +
-                formatDate(ldt.getDayOfMonth(), ldt.getMonthValue(), ldt.getYear()) +
-                "_" + Integer.toString(id);
+    static String formatImageName(LocalDateTime ldt) {
+        return formatTime(ldt.getHour(), ldt.getMinute(), ldt.getSecond()) + "_" +
+                formatDate(ldt.getDayOfMonth(), ldt.getMonthValue(), ldt.getYear());
     }
+
     private static String formatDate(int day, int month, int year) {
         return String.format("%02d", day) + "-" + String.format("%02d", month) + "-" + String.format("%02d", year);
     }

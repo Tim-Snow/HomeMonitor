@@ -11,16 +11,18 @@ public class CaptureRunnable implements Callable {
 
     private FileService fileService;
     private Webcam webcam;
+    private boolean motionMode;
 
-    CaptureRunnable(FileService fileService, Webcam webcam) {
+    CaptureRunnable(FileService fileService, Webcam webcam, boolean motionMode) {
         this.fileService = fileService;
         this.webcam = webcam;
+        this.motionMode = motionMode;
     }
 
     private String captureImage() {
         String fileName;
 
-        fileName = Util.createImageName(false);
+        fileName = Util.createImageName(motionMode);
         fileService.addToImageNames(fileName);
         File file = new File(Util.fileNameBuilder(fileName));
 

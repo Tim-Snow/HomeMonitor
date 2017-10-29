@@ -19,6 +19,9 @@ public class FilePointerController {
     @Autowired
     private FileService fileService;
 
+    @Autowired
+    private WebcamService webcamService;
+
     @GetMapping("/total_images")
     public Map<String, String> getTotalImages() {
         if (GlobalValues.WEBCAM_ENABLED) {
@@ -39,6 +42,17 @@ public class FilePointerController {
             return Util.buildResponse("file", fileService.getLatestImageName());
         } else {
             return Util.buildResponse("error", "Webcam not enabled.");
+        }
+    }
+
+    @GetMapping(value = "/image/manual_capture", produces = MediaType.IMAGE_JPEG_VALUE)
+    public ResponseEntity<byte[]> getImageManually(HttpServletRequest request) throws Exception {
+        if (GlobalValues.WEBCAM_ENABLED) {
+            File file = new File(Util.fileNameBuilder(webcamService.manualCapture()));
+            byte[] image = Files.readAllBytes(file.toPath());
+            return ResponseEntity.ok().contentType(MediaType.IMAGE_JPEG).body(image);
+        } else {
+            throw new Exception("Webcam not enabled.");
         }
     }
 

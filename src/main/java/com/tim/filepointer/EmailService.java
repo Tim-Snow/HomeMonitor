@@ -42,11 +42,11 @@ class EmailService {
 
             Multipart multipart = new MimeMultipart();
 
-            for (String str : imageNames) {
+            for (String imageName : imageNames) {
 
                 MimeBodyPart mimeBodyPart = new MimeBodyPart();
-                mimeBodyPart.setFileName(str);
-                mimeBodyPart.attachFile(new File(str));
+                mimeBodyPart.setFileName(imageName);
+                mimeBodyPart.attachFile(new File(imageName));
 
                 multipart.addBodyPart(mimeBodyPart);
 

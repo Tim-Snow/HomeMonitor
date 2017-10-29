@@ -27,19 +27,19 @@ class WebcamService extends Application implements WebcamMotionListener {
     @Autowired
     private EmailService emailService;
 
-    private boolean running, motionDetected, newMotionDetected;
-    private long delay, currentTimeMillis, nextImageTimeMillis, endTimeMillis;
+    private boolean running, motionDetected = false, newMotionDetected = false;
+    private long currentTimeMillis, nextImageTimeMillis, endTimeMillis;
     private Webcam webcam;
-    private LocalDateTime localDateTime;
 
     @PostConstruct
     public void init() {
+        setupWebcam();
 
-        this.delay = 15000;
+        Runnable webcamService = this::imageCaptureLoop;
+        new Thread(webcamService).start();
+    }
 
-        motionDetected = false;
-        newMotionDetected = false;
-
+    private void setupWebcam() {
         webcam = Webcam.getDefault();
         WebcamMotionDetector detector = new WebcamMotionDetector(webcam);
 
@@ -49,64 +49,40 @@ class WebcamService extends Application implements WebcamMotionListener {
 
         webcam.open();
         detector.start();
-
-        Runnable startWebcamService = this::start;
-
-        new Thread(startWebcamService).start();
-
     }
 
-    private String createFileName(LocalDateTime ldt, boolean motion, int id) {
-        if (motion) {
-            return "MOTION_" + String.format("%02d", ldt.getHour()) + "-" + String.format("%02d", ldt.getMinute()) +
-                    "-" + String.format("%02d", ldt.getSecond()) + "_" + String.format("%02d", ldt.getDayOfMonth()) + "-" + String.format("%02d", ldt.getMonthValue()) +
-                    "-" + String.format("%02d", ldt.getYear()) + "_" + Integer.toString(id);
-        } else {
-            return String.format("%02d", ldt.getHour()) + "-" + String.format("%02d", ldt.getMinute()) +
-                    "_" + String.format("%02d", ldt.getDayOfMonth()) + "-" + String.format("%02d", ldt.getMonthValue()) +
-                    "-" + String.format("%02d", ldt.getYear()) + "_" + Integer.toString(id);
-        }
-    }
-
-    private void start() {
+    private void imageCaptureLoop() {
         running = true;
 
-        Long delayTimeMillis = System.currentTimeMillis();
-
         while (running) {
-
-            if (System.currentTimeMillis() >= delayTimeMillis) {
-
-                delayTimeMillis = System.currentTimeMillis() + delay;
-
-                localDateTime = LocalDateTime.now(ZoneId.of("Europe/London"));
-
-                String fileName = "";
-
-                if (Util.isBetween(localDateTime.getSecond(), 0, 14)) {
-                    fileName = createFileName(localDateTime, false, 0);
-                } else if (Util.isBetween(localDateTime.getSecond(), 15, 29)) {
-                    fileName = createFileName(localDateTime, false, 1);
-                } else if (Util.isBetween(localDateTime.getSecond(), 30, 44)) {
-                    fileName = createFileName(localDateTime, false, 2);
-                } else if (Util.isBetween(localDateTime.getSecond(), 45, 60)) {
-                    fileName = createFileName(localDateTime, false, 3);
-                }
-
-                fileService.setLatestImageName(fileName);
-                System.out.println("New image: " + fileName);
-                File file = new File("images/" + fileName + ".jpg");
-
-                try {
-                    ImageIO.write(webcam.getImage(), "JPG", file);
-                } catch (IOException | NullPointerException e) {
-                    e.printStackTrace();
-                }
-
-            }
+            captureImage();
+            sleepThreadForCaptureDelay();
         }
 
         webcam.close();
+    }
+
+    private void captureImage() {
+        String fileName = createImageName(false);
+
+        fileService.addToImageNames(fileName);
+        File file = new File(Util.fileNameBuilder(fileName));
+        System.out.println("New image: " + fileName);
+
+        try {
+            ImageIO.write(webcam.getImage(), "JPG", file);
+        } catch (IOException | NullPointerException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void sleepThreadForCaptureDelay() {
+        try {
+            final long CAPTURE_DELAY = 15000;
+            Thread.sleep(CAPTURE_DELAY);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -128,8 +104,6 @@ class WebcamService extends Application implements WebcamMotionListener {
             Runnable runnable = () -> {
 
                 while (true) {
-
-                    localDateTime = LocalDateTime.now(ZoneId.of("Europe/London"));
                     currentTimeMillis = System.currentTimeMillis();
 
                     if (currentTimeMillis >= nextImageTimeMillis && newMotionDetected) {
@@ -137,39 +111,65 @@ class WebcamService extends Application implements WebcamMotionListener {
                         newMotionDetected = false;
 
                         nextImageTimeMillis = currentTimeMillis + GlobalValues.MOTION_CAPTURE_INTERVAL;
-                        String fileName = createFileName(localDateTime, true, localDateTime.getSecond());
-
-
-                        try {
-                            File file = new File(fileName);
-                            ImageIO.write(webcam.getImage(), "JPG", file);
-                            System.out.println("New image: " + fileName);
-                            fileService.setLatestImageName(fileName);
-                            fileNames.add(fileName);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
+                        captureMotionImage(fileNames);
                     }
 
                     if (currentTimeMillis >= endTimeMillis) {
-                        if (GlobalValues.EMAIL_ENABLED) {
-                            System.out.println("Sending email...");
-                            emailService.sendEmail(fileNames);
-                            fileNames.clear();
-                            motionDetected = false;
-                        } else {
-                            System.out.println("Email disabled.");
-                        }
-                        fileNames.clear();
-                        motionDetected = false;
+                        sendEmailAndCleanup(fileNames);
                         return;
                     }
                 }
             };
 
-            Thread thread = new Thread(runnable);
-            thread.start();
+            new Thread(runnable).start();
+        }
+    }
 
+    private void captureMotionImage(Vector<String> fileNames) {
+        String fileName = createImageName(true);
+
+        try {
+            File file = new File(Util.fileNameBuilder(fileName));
+            ImageIO.write(webcam.getImage(), "JPG", file);
+            System.out.println("New image: " + fileName);
+            fileService.addToImageNames(fileName);
+            fileNames.add(fileName);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void sendEmailAndCleanup(Vector<String> fileNames) {
+        if (GlobalValues.EMAIL_ENABLED) {
+            System.out.println("Sending email...");
+            emailService.sendEmail(fileNames);
+            fileNames.clear();
+            motionDetected = false;
+        } else {
+            System.out.println("Email disabled.");
+        }
+
+        fileNames.clear();
+        motionDetected = false;
+    }
+
+    private String createImageName(boolean motionDetected) {
+        LocalDateTime localDateTime = LocalDateTime.now(ZoneId.of("Europe/London"));
+
+        if (motionDetected) {
+            return Util.createMotionImageName(localDateTime, localDateTime.getSecond());
+        } else {
+            if (Util.isBetween(localDateTime.getSecond(), 0, 14)) {
+                return Util.createImageName(localDateTime, 0);
+            } else if (Util.isBetween(localDateTime.getSecond(), 15, 29)) {
+                return Util.createImageName(localDateTime, 1);
+            } else if (Util.isBetween(localDateTime.getSecond(), 30, 44)) {
+                return Util.createImageName(localDateTime, 2);
+            } else if (Util.isBetween(localDateTime.getSecond(), 45, 60)) {
+                return Util.createImageName(localDateTime, 3);
+            } else {
+                return Util.createImageName(localDateTime, 9);
+            }
         }
     }
 }

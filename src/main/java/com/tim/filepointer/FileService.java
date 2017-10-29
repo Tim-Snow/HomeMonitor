@@ -9,8 +9,10 @@ class FileService {
 
     private Stack<String> imageNames = new Stack<>();
 
-    void setLatestImageName(String s) {
-        imageNames.push(s);
+    public FileService() { }
+
+    void addToImageNames(String imageName) {
+        imageNames.push(imageName);
 
         if (imageNames.size() > GlobalValues.MAX_IMAGES) {
             System.out.println("Removing from history: " + imageNames.elementAt(0));

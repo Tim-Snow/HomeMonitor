@@ -9,13 +9,15 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.Vector;
+import java.util.concurrent.*;
 
 @Component
 @EnableAutoConfiguration
@@ -27,16 +29,45 @@ class WebcamService extends Application implements WebcamMotionListener {
     @Autowired
     private EmailService emailService;
 
-    private boolean running, motionDetected = false, newMotionDetected = false;
-    private long currentTimeMillis, nextImageTimeMillis, endTimeMillis;
     private Webcam webcam;
+    private Vector<String> currentMotionFileNames = new Vector<>();
+    private Thread motionCaptureThread;
+    private Callable webcamCallable;
+    private ScheduledExecutorService executor;
+    private volatile boolean motionDetectionRunning = false;
 
     @PostConstruct
+    @SuppressWarnings("unused")
     public void init() {
+        Webcam.getDefault().close();
         setupWebcam();
 
-        Runnable webcamService = this::imageCaptureLoop;
-        new Thread(webcamService).start();
+        webcamCallable = new CaptureRunnable(fileService, webcam);
+        Timer timer = new Timer();
+        TimerTask task = new TimerTask() {
+
+            @Override
+            public void run() {
+                try {
+                    System.out.println(webcamCallable.call());
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+
+        executor = new ScheduledThreadPoolExecutor(4);
+        ScheduledFuture<?> future = executor.scheduleAtFixedRate(task, 0, 15, TimeUnit.SECONDS);
+    }
+
+    @PreDestroy
+    @SuppressWarnings("unused")
+    public void cleanup(){
+        System.out.println("WEBCAM CLEAN UP");
+        motionDetectionRunning = false;
+        executor.shutdown();
+        motionCaptureThread.interrupt();
+        webcam.close();
     }
 
     private void setupWebcam() {
@@ -51,19 +82,21 @@ class WebcamService extends Application implements WebcamMotionListener {
         detector.start();
     }
 
-    private void imageCaptureLoop() {
-        running = true;
-
-        while (running) {
-            captureImage();
-            sleepThreadForCaptureDelay();
+    @Override
+    public void motionDetected(WebcamMotionEvent wme) {
+        if (motionCaptureThread == null) {
+            motionDetectionRunning = true;
+            System.out.println(">>>MOTION DETECTED<<<");
+            motionCaptureThread = new Thread(motionDetectionRunnable());
+            motionCaptureThread.start();
         }
-
-        webcam.close();
     }
 
     private void captureImage() {
-        String fileName = createImageName(false);
+        String fileName;
+
+        fileName = Util.createImageName(true);
+        currentMotionFileNames.add(fileName);
 
         fileService.addToImageNames(fileName);
         File file = new File(Util.fileNameBuilder(fileName));
@@ -76,100 +109,34 @@ class WebcamService extends Application implements WebcamMotionListener {
         }
     }
 
-    private void sleepThreadForCaptureDelay() {
-        try {
-            final long CAPTURE_DELAY = 15000;
-            Thread.sleep(CAPTURE_DELAY);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
+    private Runnable motionDetectionRunnable() {
+        long endTimeMillis = System.currentTimeMillis() + GlobalValues.MOTION_TIME_TO_WAIT_BEFORE_EMAILING;
 
-    @Override
-    public void motionDetected(WebcamMotionEvent wme) {
+        return () -> {
+            while (motionDetectionRunning) {
+                captureImage();
 
-        newMotionDetected = true;
-
-        if (!motionDetected && running) {
-
-            System.out.println("MOTION DETECTED");
-            motionDetected = true;
-
-            Vector<String> fileNames = new Vector<>();
-
-            currentTimeMillis = System.currentTimeMillis();
-            endTimeMillis = currentTimeMillis + GlobalValues.MOTION_TIME_TO_WAIT_BEFORE_EMAILING;
-            nextImageTimeMillis = currentTimeMillis + GlobalValues.MOTION_CAPTURE_INTERVAL;
-
-            Runnable runnable = () -> {
-
-                while (true) {
-                    currentTimeMillis = System.currentTimeMillis();
-
-                    if (currentTimeMillis >= nextImageTimeMillis && newMotionDetected) {
-
-                        newMotionDetected = false;
-
-                        nextImageTimeMillis = currentTimeMillis + GlobalValues.MOTION_CAPTURE_INTERVAL;
-                        captureMotionImage(fileNames);
-                    }
-
-                    if (currentTimeMillis >= endTimeMillis) {
-                        sendEmailAndCleanup(fileNames);
-                        return;
-                    }
+                try {
+                    motionCaptureThread.sleep(GlobalValues.MOTION_CAPTURE_INTERVAL);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
-            };
 
-            new Thread(runnable).start();
-        }
+                if (System.currentTimeMillis() >= endTimeMillis)
+                    sendEmailAndCleanup();
+            }
+        };
     }
 
-    private void captureMotionImage(Vector<String> fileNames) {
-        String fileName = createImageName(true);
-
-        try {
-            File file = new File(Util.fileNameBuilder(fileName));
-            ImageIO.write(webcam.getImage(), "JPG", file);
-            System.out.println("New image: " + fileName);
-            fileService.addToImageNames(fileName);
-            fileNames.add(fileName);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void sendEmailAndCleanup(Vector<String> fileNames) {
+    private void sendEmailAndCleanup() {
         if (GlobalValues.EMAIL_ENABLED) {
             System.out.println("Sending email...");
-            emailService.sendEmail(fileNames);
-            fileNames.clear();
-            motionDetected = false;
-        } else {
+            emailService.sendEmail(currentMotionFileNames);
+        } else
             System.out.println("Email disabled.");
-        }
 
-        fileNames.clear();
-        motionDetected = false;
-    }
-
-    private String createImageName(boolean motionDetected) {
-        LocalDateTime localDateTime = LocalDateTime.now(ZoneId.of("Europe/London"));
-
-        if (motionDetected) {
-            return Util.createMotionImageName(localDateTime, localDateTime.getSecond());
-        } else {
-            if (Util.isBetween(localDateTime.getSecond(), 0, 14)) {
-                return Util.createImageName(localDateTime, 0);
-            } else if (Util.isBetween(localDateTime.getSecond(), 15, 29)) {
-                return Util.createImageName(localDateTime, 1);
-            } else if (Util.isBetween(localDateTime.getSecond(), 30, 44)) {
-                return Util.createImageName(localDateTime, 2);
-            } else if (Util.isBetween(localDateTime.getSecond(), 45, 60)) {
-                return Util.createImageName(localDateTime, 3);
-            } else {
-                return Util.createImageName(localDateTime, 9);
-            }
-        }
+        motionDetectionRunning = false;
+        motionCaptureThread = null;
+        currentMotionFileNames.clear();
     }
 }

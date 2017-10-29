@@ -3,35 +3,64 @@ package com.tim.filepointer;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ApplicationContext;
 
+import java.io.File;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 
 class Util {
 
     static void initiateShutdown(ApplicationContext context, int returnCode) {
-
-        //TODO move all images from session in to history folder
+        cleanImageDirectory();
 
         SpringApplication.exit(context, () -> returnCode);
+    }
+
+    static void cleanImageDirectory(){
+        System.out.println("FILE CLEAN UP");
+        File[] files = new File("images").listFiles();
+
+        if(files != null)
+            for(File file: files)
+                if(file.isFile())
+                    if (file.getName().endsWith(".jpg"))
+                        if(file.getName().startsWith("MOTION")) {
+                            file.renameTo(new File("images/motion_storage" + file.getName()));
+                        } else {
+                            System.out.println("DELETING: " + file.getName());
+                            file.delete();
+                        }
     }
 
     static String fileNameBuilder(String fileName) {
         return "images\\" + fileName + ".jpg";
     }
 
-    static String createImageName(LocalDateTime ldt, int id) {
+    static String createImageName(boolean motionDetected) {
+        LocalDateTime localDateTime = LocalDateTime.now(ZoneId.of("Europe/London"));
+
+        if (motionDetected) {
+            return "MOTION_" + formatImageName(localDateTime, localDateTime.getSecond());
+        } else {
+            if (isBetween(localDateTime.getSecond(), 0, 14)) {
+                return formatImageName(localDateTime, 0);
+            } else if (isBetween(localDateTime.getSecond(), 15, 29)) {
+                return formatImageName(localDateTime, 1);
+            } else if (isBetween(localDateTime.getSecond(), 30, 44)) {
+                return formatImageName(localDateTime, 2);
+            } else if (isBetween(localDateTime.getSecond(), 45, 60)) {
+                return formatImageName(localDateTime, 3);
+            } else {
+                return formatImageName(localDateTime, 9);
+            }
+        }
+    }
+
+    static String formatImageName(LocalDateTime ldt, int id) {
         return  formatTime(ldt.getHour(), ldt.getMinute(), ldt.getSecond()) + "_" +
                 formatDate(ldt.getDayOfMonth(), ldt.getMonthValue(), ldt.getYear()) +
                 "_" + Integer.toString(id);
     }
-
-    static String createMotionImageName(LocalDateTime ldt, int id) {
-        return "MOTION_" +
-                formatTime(ldt.getHour(), ldt.getMinute(), ldt.getSecond()) + "_" +
-                formatDate(ldt.getDayOfMonth(), ldt.getMonthValue(), ldt.getYear()) +
-                "_" + Integer.toString(id);
-    }
-
     private static String formatDate(int day, int month, int year) {
         return String.format("%02d", day) + "-" + String.format("%02d", month) + "-" + String.format("%02d", year);
     }

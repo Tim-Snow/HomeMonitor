@@ -6,26 +6,29 @@ import org.springframework.context.ApplicationContext;
 import java.io.File;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Stack;
 
 class Util {
 
     static void initiateShutdown(ApplicationContext context, int returnCode) {
-        cleanImageDirectory();
+        //cleanImageDirectory();
 
         SpringApplication.exit(context, () -> returnCode);
     }
 
     private static void cleanImageDirectory() {
         System.out.println("FILE CLEAN UP");
-        File[] files = new File("images").listFiles();
+        File[] files = new File(".").listFiles();
 
         if (files != null)
             for (File file : files)
                 if (file.isFile())
                     if (file.getName().endsWith(".jpg"))
                         if (file.getName().startsWith("MOTION")) {
-                            file.renameTo(new File("images/motion_storage" + file.getName()));
+                            file.renameTo(new File("storage/" + file.getName()));
                         } else {
                             System.out.println("DELETING: " + file.getName());
                             file.delete();
@@ -33,7 +36,7 @@ class Util {
     }
 
     static String fileNameBuilder(String fileName) {
-        return "images\\" + fileName + ".jpg";
+        return fileName + ".jpg";
     }
 
     static String createImageName(String prefix) {

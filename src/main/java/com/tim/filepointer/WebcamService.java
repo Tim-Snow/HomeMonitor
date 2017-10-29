@@ -5,7 +5,6 @@ import com.github.sarxos.webcam.WebcamMotionDetector;
 import com.github.sarxos.webcam.WebcamMotionEvent;
 import com.github.sarxos.webcam.WebcamMotionListener;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -16,7 +15,6 @@ import java.util.Vector;
 import java.util.concurrent.*;
 
 @Component
-@EnableAutoConfiguration
 class WebcamService implements WebcamMotionListener {
 
     @Autowired
@@ -35,14 +33,16 @@ class WebcamService implements WebcamMotionListener {
     @SuppressWarnings("unused")
     @PostConstruct
     public void init() {
-        setupWebcam();
+        if(GlobalValues.WEBCAM_ENABLED) {
+            setupWebcam();
 
-        regularCaptureCallable = new CaptureCallable(fileService, webcam, "");
-        motionCaptureCallable = new CaptureCallable(fileService, webcam, "MOTION_");
-        manualCaptureCallable = new CaptureCallable(fileService, webcam, "MANUAL_");
+            regularCaptureCallable = new CaptureCallable(fileService, webcam, "");
+            motionCaptureCallable = new CaptureCallable(fileService, webcam, "MOTION_");
+            manualCaptureCallable = new CaptureCallable(fileService, webcam, "MANUAL_");
 
-        executor = new ScheduledThreadPoolExecutor(0);
-        regularFuture = executor.scheduleAtFixedRate(getRegularTask(), 0, GlobalValues.CAPTURE_INTERVAL, TimeUnit.SECONDS);
+            executor = new ScheduledThreadPoolExecutor(0);
+            regularFuture = executor.scheduleAtFixedRate(getRegularTask(), 0, GlobalValues.CAPTURE_INTERVAL, TimeUnit.SECONDS);
+        }
     }
 
     @SuppressWarnings("unused")
@@ -69,8 +69,8 @@ class WebcamService implements WebcamMotionListener {
 
     @Override
     public void motionDetected(WebcamMotionEvent wme) {
-        if (!motionDetectionRunning) {
-            System.out.println(">>>MOTION DETECTED<<<");
+        if (GlobalValues.WEBCAM_ENABLED && !motionDetectionRunning) {
+            System.out.println(">>> MOTION DETECTED <<<");
 
             motionDetectionRunning = true;
 
@@ -91,11 +91,14 @@ class WebcamService implements WebcamMotionListener {
     }
 
     String manualCapture() {
-        String fileName = "";
-        try {
-            fileName = (String) manualCaptureCallable.call();
-        } catch (Exception e) {
-            e.printStackTrace();
+        String fileName = "Webcam not enabled.";
+
+        if(GlobalValues.WEBCAM_ENABLED) {
+            try {
+                fileName = (String) manualCaptureCallable.call();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
 
         return fileName;
@@ -106,7 +109,7 @@ class WebcamService implements WebcamMotionListener {
             @Override
             public void run() {
                 try {
-                    regularCaptureCallable.call();
+                    fileService.addToImageNames((String) regularCaptureCallable.call());
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -123,7 +126,9 @@ class WebcamService implements WebcamMotionListener {
                 try {
                     if (iterations < GlobalValues.MOTION_NUM_IMAGES_BEFORE_EMAILING) {
                         iterations++;
-                        currentMotionFileNames.add((String) motionCaptureCallable.call());
+                        String fileName = (String) motionCaptureCallable.call();
+                        fileService.addToImageNames(fileName);
+                        currentMotionFileNames.add(fileName);
                     } else {
                         sendEmailAndCleanup();
                     }

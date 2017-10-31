@@ -47,38 +47,53 @@ public class FilePointerController {
 
     @GetMapping(value = "/image/manual_capture", produces = MediaType.IMAGE_JPEG_VALUE)
     public ResponseEntity<byte[]> getImageManually(HttpServletRequest request) throws Exception {
+
+        ResponseEntity responseEntity;
+
         if (GlobalValues.WEBCAM_ENABLED) {
             File file = new File(Util.fileNameBuilder(webcamService.manualCapture()));
             byte[] image = Files.readAllBytes(file.toPath());
-            return ResponseEntity.ok().contentType(MediaType.IMAGE_JPEG).body(image);
+            responseEntity = ResponseEntity.ok().contentType(MediaType.IMAGE_JPEG).body(image);
         } else {
-            throw new Exception("Webcam not enabled.");
+            responseEntity = ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body("{\"error\":\"Webcam not enabled.\"}");
         }
+
+        return responseEntity;
     }
 
     @GetMapping(value = "/image/latest", produces = MediaType.IMAGE_JPEG_VALUE)
     public ResponseEntity<byte[]> getLatestImage(HttpServletRequest request) throws Exception {
+
+        ResponseEntity responseEntity;
+
         if (GlobalValues.WEBCAM_ENABLED) {
             File file = new File(Util.fileNameBuilder(fileService.getLatestImageName()));
             byte[] image = Files.readAllBytes(file.toPath());
-            return ResponseEntity.ok().contentType(MediaType.IMAGE_JPEG).body(image);
+            responseEntity = ResponseEntity.ok().contentType(MediaType.IMAGE_JPEG).body(image);
         } else {
-            throw new Exception("Webcam not enabled.");
+            responseEntity = ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body("{\"error\":\"Webcam not enabled.\"}");
         }
+
+        return responseEntity;
     }
 
     @GetMapping(value = "/image/{fileName}", produces = MediaType.IMAGE_JPEG_VALUE)
     public ResponseEntity<byte[]> getImageByFilename(HttpServletRequest request, @PathVariable("fileName") String fileName) throws Exception {
+
+        ResponseEntity responseEntity;
+
         if (GlobalValues.WEBCAM_ENABLED) {
             try {
                 File file = new File(Util.fileNameBuilder(fileName));
                 byte[] image = Files.readAllBytes(file.toPath());
-                return ResponseEntity.ok().contentType(MediaType.IMAGE_JPEG).body(image);
+                responseEntity =ResponseEntity.ok().contentType(MediaType.IMAGE_JPEG).body(image);
             } catch (NoSuchFileException e) {
-                throw new Exception("File not found.");
+                responseEntity = ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body("{\"error\":\"File not found.\"}");
             }
         } else {
-            throw new Exception("Webcam not enabled.");
+            responseEntity = ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body("{\"error\":\"Webcam not enabled.\"}");
         }
+
+        return responseEntity;
     }
 }

@@ -2,8 +2,12 @@ package com.tim.filepointer;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ApplicationContext;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Collections;
@@ -62,20 +66,38 @@ class Util {
         if(GlobalValues.WEBCAM_ENABLED){
             return Collections.singletonMap(key, value);
         } else {
-            return Collections.singletonMap("error", "Webcam not enabled.");
+            return buildWebcamNotEnabledResponse();
         }
     }
 
     static Map<String, String> buildMultiResponse(String key, Stack<String> responses) {
-        if(GlobalValues.WEBCAM_ENABLED){
+        if (GlobalValues.WEBCAM_ENABLED) {
             HashMap<String, String> responseMap = new HashMap<>();
             for (int i = 0; i < responses.size(); i++) {
                 responseMap.put(key + " " + i, responses.get(i));
             }
             return responseMap;
         } else {
-            return Collections.singletonMap("error", "Webcam not enabled.");
+            return buildWebcamNotEnabledResponse();
         }
+    }
+
+    static Map<String, String> buildWebcamNotEnabledResponse(){
+        return Collections.singletonMap("error", "Webcam not enabled.");
+    }
+
+    static ResponseEntity<Object> buildResponseEntityWithImage(String filename){
+        if(GlobalValues.WEBCAM_ENABLED) {
+            try {
+                File file = new File(Util.fileNameBuilder(filename));
+                byte[] bytes = Files.readAllBytes(file.toPath());
+                return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(bytes);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return null;
     }
 
 }

@@ -1,3 +1,4 @@
+/*
 package com.tim.filepointer;
 
 import org.springframework.stereotype.Component;
@@ -86,3 +87,4 @@ public class FileService {
         return imageNames.size();
     }
 }
+*/

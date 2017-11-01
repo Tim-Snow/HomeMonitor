@@ -20,10 +20,7 @@ public class CaptureCallable implements Callable {
     }
 
     private String captureImage() {
-        String fileName;
-
-        fileName = Util.createImageName(fileNamePrefix);
-        fileService.addToImageNames(fileName);
+        String fileName = Util.createImageName(fileNamePrefix);
         File file = new File(Util.fileNameBuilder(fileName));
 
         try {
@@ -33,6 +30,7 @@ public class CaptureCallable implements Callable {
         }
 
         System.out.println("New image: " + fileName);
+        fileService.addToImageNames(fileName);
         return fileName;
     }
 

@@ -83,15 +83,7 @@ class Util {
         }
     }
 
-    static Map<String, String> buildWebcamNotEnabledResponse(){
-        return Collections.singletonMap("error", "Webcam not enabled.");
-    }
-
-    static Map<String, String> buildGeneralErrorResponse(){
-        return Collections.singletonMap("error", "Something went wrong. :(");
-    }
-
-    static ResponseEntity<Object> buildResponseEntityWithImage(String filename){
+    static ResponseEntity<Object> buildImageResponse(String filename){
         if(GlobalValues.WEBCAM_ENABLED) {
             try {
                 File file = new File(Util.fileNameBuilder(filename));
@@ -104,6 +96,14 @@ class Util {
         }
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(buildWebcamNotEnabledResponse());
+    }
+
+    private static Map<String, String> buildWebcamNotEnabledResponse(){
+        return Collections.singletonMap("error", "Webcam not enabled.");
+    }
+
+    private static Map<String, String> buildGeneralErrorResponse(){
+        return Collections.singletonMap("error", "Something went wrong. :(");
     }
 
 }

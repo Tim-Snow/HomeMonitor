@@ -15,7 +15,7 @@ import java.util.Vector;
 import java.util.concurrent.*;
 
 @Component
-class WebcamService implements WebcamMotionListener {
+public class WebcamService implements WebcamMotionListener {
 
     @Autowired
     private FileService fileService;

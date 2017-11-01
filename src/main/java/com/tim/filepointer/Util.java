@@ -58,18 +58,24 @@ class Util {
         return String.format("%02d", hour) + "-" + String.format("%02d", minute) + "-" + String.format("%02d", second);
     }
 
-    static Map<String, String> buildResponse(String key, String response) {
-        return Collections.singletonMap(key, response);
+    static Map<String, String> buildResponse(String key, String value) {
+        if(GlobalValues.WEBCAM_ENABLED){
+            return Collections.singletonMap(key, value);
+        } else {
+            return Collections.singletonMap("error", "Webcam not enabled.");
+        }
     }
 
     static Map<String, String> buildMultiResponse(String key, Stack<String> responses) {
-        HashMap<String, String> responseMap = new HashMap<>();
-
-        for (int i = 0; i < responses.size(); i++) {
-            responseMap.put(key + " " + i, responses.get(i));
+        if(GlobalValues.WEBCAM_ENABLED){
+            HashMap<String, String> responseMap = new HashMap<>();
+            for (int i = 0; i < responses.size(); i++) {
+                responseMap.put(key + " " + i, responses.get(i));
+            }
+            return responseMap;
+        } else {
+            return Collections.singletonMap("error", "Webcam not enabled.");
         }
-
-        return responseMap;
     }
 
 }

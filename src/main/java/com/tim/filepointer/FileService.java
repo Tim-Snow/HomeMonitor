@@ -8,12 +8,12 @@ import java.util.Stack;
 import java.util.Vector;
 
 @Component
-class FileService {
+public class FileService {
 
     private int totalImages = 0;
     private Stack<String> imageNames = new Stack<>();
 
-    public FileService() {
+    private FileService() {
 //        cleanOldFiles();
     }
 

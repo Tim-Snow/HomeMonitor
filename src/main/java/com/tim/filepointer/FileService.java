@@ -73,7 +73,9 @@ public class FileService {
     }
 
     String getLatestImageName() {
-        return imageNames.peek();
+        if(imageNames.size() > 0)
+            return imageNames.peek();
+        return "No images.";
     }
 
     Stack<String> getAllImageNames() {

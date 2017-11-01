@@ -2,6 +2,7 @@ package com.tim.filepointer;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ApplicationContext;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
@@ -86,6 +87,10 @@ class Util {
         return Collections.singletonMap("error", "Webcam not enabled.");
     }
 
+    static Map<String, String> buildGeneralErrorResponse(){
+        return Collections.singletonMap("error", "Something went wrong. :(");
+    }
+
     static ResponseEntity<Object> buildResponseEntityWithImage(String filename){
         if(GlobalValues.WEBCAM_ENABLED) {
             try {
@@ -94,10 +99,11 @@ class Util {
                 return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(bytes);
             } catch (IOException e) {
                 e.printStackTrace();
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(buildGeneralErrorResponse());
             }
         }
 
-        return null;
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(buildWebcamNotEnabledResponse());
     }
 
 }

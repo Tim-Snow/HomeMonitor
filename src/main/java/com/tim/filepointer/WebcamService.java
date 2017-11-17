@@ -48,11 +48,13 @@ public class WebcamService implements WebcamMotionListener {
     @SuppressWarnings("unused")
     @PreDestroy
     public void cleanup() {
-        System.out.println("WEBCAM CLEAN UP");
-        motionFuture.cancel(true);
-        regularFuture.cancel(true);
-        executor.shutdown();
-        webcam.close();
+        if(GlobalValues.WEBCAM_ENABLED) {
+            System.out.println("WEBCAM CLEAN UP");
+            motionFuture.cancel(true);
+            regularFuture.cancel(true);
+            executor.shutdown();
+            webcam.close();
+        }
     }
 
     private void setupWebcam() {
@@ -71,9 +73,7 @@ public class WebcamService implements WebcamMotionListener {
     public void motionDetected(WebcamMotionEvent wme) {
         if (GlobalValues.WEBCAM_ENABLED && !motionDetectionRunning) {
             System.out.println(">>> MOTION DETECTED <<<");
-
             motionDetectionRunning = true;
-
             motionFuture = executor.scheduleAtFixedRate(getMotionTask(), 0, GlobalValues.MOTION_CAPTURE_INTERVAL, TimeUnit.MILLISECONDS);
         }
     }
@@ -91,7 +91,7 @@ public class WebcamService implements WebcamMotionListener {
     }
 
     String manualCapture() {
-        String fileName = "Webcam not enabled.";
+        String fileName = "";
 
         if(GlobalValues.WEBCAM_ENABLED) {
             try {
@@ -129,9 +129,8 @@ public class WebcamService implements WebcamMotionListener {
                         String fileName = (String) motionCaptureCallable.call();
                         fileService.addToImageNames(fileName);
                         currentMotionFileNames.add(fileName);
-                    } else {
+                    } else
                         sendEmailAndCleanup();
-                    }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

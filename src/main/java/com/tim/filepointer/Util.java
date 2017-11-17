@@ -8,39 +8,23 @@ import org.springframework.http.ResponseEntity;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Stack;
+
+import static com.tim.filepointer.GlobalValues.WEBCAM_ENABLED;
+import static java.lang.String.format;
+import static java.nio.file.Files.readAllBytes;
+import static java.util.Collections.singletonMap;
 
 class Util {
 
-    static void initiateShutdown(ApplicationContext context, int returnCode) {
-        //cleanImageDirectory();
-
+    static void exit(ApplicationContext context, int returnCode) {
         SpringApplication.exit(context, () -> returnCode);
     }
 
-    private static void cleanImageDirectory() {
-        System.out.println("FILE CLEAN UP");
-        File[] files = new File(".").listFiles();
-
-        if (files != null)
-            for (File file : files)
-                if (file.isFile())
-                    if (file.getName().endsWith(".jpg"))
-                        if (file.getName().startsWith("MOTION")) {
-                            file.renameTo(new File("storage/" + file.getName()));
-                        } else {
-                            System.out.println("DELETING: " + file.getName());
-                            file.delete();
-                        }
-    }
-
-    static String fileNameBuilder(String fileName) {
+    static String jpg(String fileName) {
         return fileName + ".jpg";
     }
 
@@ -51,59 +35,61 @@ class Util {
     }
 
     private static String formatImageName(LocalDateTime ldt) {
-        return formatTime(ldt.getHour(), ldt.getMinute(), ldt.getSecond()) + "_" +
-                formatDate(ldt.getDayOfMonth(), ldt.getMonthValue(), ldt.getYear());
+        return String.format("%s_%s", formatTime(ldt.getHour(), ldt.getMinute(), ldt.getSecond()),
+                formatDate(ldt.getDayOfMonth(), ldt.getMonthValue(), ldt.getYear()));
     }
 
     private static String formatDate(int day, int month, int year) {
-        return String.format("%02d", day) + "-" + String.format("%02d", month) + "-" + String.format("%02d", year);
+        return String.format("%s-%s-%s", format("%02d", day), format("%02d", month), format("%02d", year));
     }
 
     private static String formatTime(int hour, int minute, int second) {
-        return String.format("%02d", hour) + "-" + String.format("%02d", minute) + "-" + String.format("%02d", second);
+        return String.format("%s-%s-%s", format("%02d", hour), format("%02d", minute), format("%02d", second));
     }
 
     static Map<String, String> buildResponse(String key, String value) {
-        if(GlobalValues.WEBCAM_ENABLED){
-            return Collections.singletonMap(key, value);
-        } else {
-            return buildWebcamNotEnabledResponse();
-        }
+        if(WEBCAM_ENABLED)
+            return singletonMap(key, value);
+         else
+            return webcamNotEnabledResponse();
     }
 
-    static Map<String, String> buildMultiResponse(String key, Stack<String> responses) {
-        if (GlobalValues.WEBCAM_ENABLED) {
+    static Map<String, String> buildMultiResponse(String key, String[] responses) {
+        if (WEBCAM_ENABLED) {
             HashMap<String, String> responseMap = new HashMap<>();
-            for (int i = 0; i < responses.size(); i++) {
-                responseMap.put(key + " " + i, responses.get(i));
+            int count = 0;
+            for (String response : responses) {
+                responseMap.put(key + " " + count, response);
+                count++;
             }
+
             return responseMap;
-        } else {
-            return buildWebcamNotEnabledResponse();
         }
+
+        return webcamNotEnabledResponse();
     }
 
     static ResponseEntity<Object> buildImageResponse(String filename){
-        if(GlobalValues.WEBCAM_ENABLED) {
+        if(WEBCAM_ENABLED) {
             try {
-                File file = new File(Util.fileNameBuilder(filename));
-                byte[] bytes = Files.readAllBytes(file.toPath());
+                File file = new File(jpg(filename));
+                byte[] bytes = readAllBytes(file.toPath());
                 return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(bytes);
             } catch (IOException e) {
                 e.printStackTrace();
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(buildGeneralErrorResponse());
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(generalErrorResponse());
             }
         }
 
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(buildWebcamNotEnabledResponse());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(webcamNotEnabledResponse());
     }
 
-    private static Map<String, String> buildWebcamNotEnabledResponse(){
-        return Collections.singletonMap("error", "Webcam not enabled.");
+    private static Map<String, String> webcamNotEnabledResponse(){
+        return singletonMap("error", "Webcam not enabled.");
     }
 
-    private static Map<String, String> buildGeneralErrorResponse(){
-        return Collections.singletonMap("error", "Something went wrong. :(");
+    private static Map<String, String> generalErrorResponse(){
+        return singletonMap("error", "Something went wrong. :(");
     }
 
 }

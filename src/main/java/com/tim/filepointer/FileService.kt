@@ -2,17 +2,21 @@ package com.tim.filepointer
 
 import com.tim.filepointer.GlobalValues.MAX_IMAGES
 import org.springframework.stereotype.Component
-import java.util.*
 
 @Component
 class FileService {
 
     var totalImages: Int = 0
-    var imageNames: Stack<String> = Stack()
+
+    val imageNames = Array<String>(5) { "it = $it" }
+
+    init {
+        cleanOldFiles()
+    }
 
     fun getLatestImageName(): String {
-        if(!imageNames.empty())
-            return imageNames.peek()
+        if(!imageNames.isEmpty())
+            return imageNames[totalImages]
         return "0"
     }
 
@@ -24,21 +28,18 @@ class FileService {
     }
 
     private fun storeImage(imageName: String) {
-        imageNames.push(imageName)
+        imageNames[totalImages + 1] = imageName
         totalImages++
     }
 
+    private fun cleanOldFiles() { }
+
     private fun deleteImage(index: Int) {
-        imageNames.removeAt(index)
-        //TODO move all elements down
+        for((index, value) in imageNames.withIndex()){
+            
+        }
+
+        imageNames[index] = ""
+        totalImages--
     }
-
-    private fun cleanOldFiles() {
-
-    }
-
-    init {
-        cleanOldFiles()
-    }
-
 }

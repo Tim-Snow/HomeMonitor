@@ -31,14 +31,16 @@ sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 dependencies {
-    compile group: 'org.jetbrains.kotlin', name: 'kotlin-stdlib-jre8', version: '1.1.51'
-    compile group: 'org.jetbrains.kotlin', name: 'kotlin-reflect', version: '1.1.51'
+    compile group: 'org.jetbrains.kotlin', name: 'kotlin-stdlib-jre8', version: '1.1.60'
+    compile group: 'org.jetbrains.kotlin', name: 'kotlin-reflect', version: '1.1.60'
     compile group: 'com.fasterxml.jackson.module', name: 'jackson-module-kotlin', version: '2.9.2'
 
 
     compile 'org.springframework.boot:spring-boot-starter-tomcat'
     compile("org.springframework.boot:spring-boot-starter-web", 'com.github.sarxos:webcam-capture:0.3.10', 'javax.mail:mail:1.4.7')
     compile group: 'com.github.sarxos', name: 'webcam-capture-driver-v4l4j', version: '0.3.11'
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-security', version: '1.5.8.RELEASE'
+    compile group: 'org.springframework.security.oauth', name: 'spring-security-oauth2', version: '2.2.0.RELEASE'
     testCompile('org.springframework.boot:spring-boot-starter-test')
     compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
 }

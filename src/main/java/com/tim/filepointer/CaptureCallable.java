@@ -7,6 +7,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
+import static com.tim.filepointer.Util.jpg;
+
 public class CaptureCallable implements Callable {
 
     private FileService fileService;
@@ -21,7 +23,7 @@ public class CaptureCallable implements Callable {
 
     private String captureImage() {
         String fileName = Util.createImageName(fileNamePrefix);
-        File file = new File(Util.fileNameBuilder(fileName));
+        File file = new File(jpg(fileName));
 
         try {
             ImageIO.write(webcam.getImage(), "JPG", file);

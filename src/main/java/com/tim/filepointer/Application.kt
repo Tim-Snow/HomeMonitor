@@ -9,6 +9,6 @@ import org.springframework.security.oauth2.config.annotation.web.configuration.E
 @EnableResourceServer
 open class Application : WebSecurityConfigurerAdapter()
 
-fun main(args: Array<String>)  {
+fun main(args: Array<String>) {
     SpringApplication.run(Application::class.java, *args)
 }

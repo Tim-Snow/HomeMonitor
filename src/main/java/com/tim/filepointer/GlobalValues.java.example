@@ -1,0 +1,17 @@
+package com.tim.filepointer;
+
+class GlobalValues {
+
+    static final boolean EMAIL_ENABLED = true;
+    static final boolean WEBCAM_ENABLED = true;
+
+    static final int MAX_IMAGES = 50;
+    static final int MOTION_NUM_IMAGES_BEFORE_EMAILING = 10;
+    static final int MOTION_CAPTURE_INTERVAL = 1000;
+    static final int CAPTURE_INTERVAL = 15;
+
+    static final String EMAIL_ADDRESS = "a@a.com";
+    static final String TO_EMAIL_ADDRESS = "b@b.com";
+    static final String PASSWORD = "password";
+
+}

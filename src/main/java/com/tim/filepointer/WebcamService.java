@@ -14,8 +14,9 @@ import java.util.TimerTask;
 import java.util.Vector;
 import java.util.concurrent.*;
 
-import static com.tim.filepointer.GlobalValues.MOTION_NUM_IMAGES_BEFORE_EMAILING;
-import static com.tim.filepointer.GlobalValues.WEBCAM_ENABLED;
+import static com.tim.filepointer.GlobalValues.*;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 @Component
 public class WebcamService implements WebcamMotionListener {
@@ -44,7 +45,7 @@ public class WebcamService implements WebcamMotionListener {
             manualCaptureCallable = new CaptureCallable(fileService, webcam, "MANUAL_");
 
             executor = new ScheduledThreadPoolExecutor(0);
-            regularFuture = executor.scheduleAtFixedRate(getRegularTask(), 0, GlobalValues.CAPTURE_INTERVAL, TimeUnit.SECONDS);
+            regularFuture = executor.scheduleAtFixedRate(getRegularTask(), 0, CAPTURE_INTERVAL, SECONDS);
         }
     }
 
@@ -65,7 +66,7 @@ public class WebcamService implements WebcamMotionListener {
         WebcamMotionDetector detector = new WebcamMotionDetector(webcam);
 
         webcam.setViewSize(new Dimension(640, 480));
-        detector.setInterval(GlobalValues.MOTION_CAPTURE_INTERVAL);
+        detector.setInterval(MOTION_CAPTURE_INTERVAL);
         detector.addMotionListener(this);
 
         webcam.open();
@@ -77,7 +78,7 @@ public class WebcamService implements WebcamMotionListener {
         if (WEBCAM_ENABLED && !motionDetectionRunning) {
             System.out.println(">>> MOTION DETECTED <<<");
             motionDetectionRunning = true;
-            motionFuture = executor.scheduleAtFixedRate(getMotionTask(), 0, GlobalValues.MOTION_CAPTURE_INTERVAL, TimeUnit.MILLISECONDS);
+            motionFuture = executor.scheduleAtFixedRate(getMotionTask(), 0, MOTION_CAPTURE_INTERVAL, MILLISECONDS);
         }
     }
 

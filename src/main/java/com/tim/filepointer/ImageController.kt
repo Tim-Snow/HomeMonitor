@@ -27,4 +27,7 @@ class ImageController @Autowired constructor(private val fileService: FileServic
 
     @GetMapping("/image/{fileName}")
     fun getImageByName(@PathVariable("fileName") fileName: String): ResponseEntity<Any> = buildImageResponse(fileName)
+
+    @GetMapping("/isMotionDetected")
+    fun isMotionDetected(): Map<String, String> = buildResponse("motion_detected", webcamService.isMotionDetectedSinceLastCheck.toString())
 }

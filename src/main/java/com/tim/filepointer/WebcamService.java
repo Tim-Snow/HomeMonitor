@@ -33,6 +33,7 @@ public class WebcamService implements WebcamMotionListener {
     private ScheduledFuture<?> regularFuture, motionFuture;
     private ScheduledExecutorService executor;
     private boolean motionDetectionRunning = false;
+    private boolean motionDetectedSinceLastCheck = false;
 
     @SuppressWarnings("unused")
     @PostConstruct
@@ -75,6 +76,8 @@ public class WebcamService implements WebcamMotionListener {
 
     @Override
     public void motionDetected(WebcamMotionEvent wme) {
+        motionDetectedSinceLastCheck = true;
+
         if (WEBCAM_ENABLED && !motionDetectionRunning) {
             System.out.println(">>> MOTION DETECTED <<<");
             motionDetectionRunning = true;
@@ -87,6 +90,12 @@ public class WebcamService implements WebcamMotionListener {
         motionDetectionRunning = false;
         currentMotionFileNames.clear();
         motionFuture.cancel(true);
+    }
+
+    boolean isMotionDetectedSinceLastCheck(){
+        boolean r = motionDetectedSinceLastCheck;
+        motionDetectedSinceLastCheck = false;
+        return r;
     }
 
     String manualCapture() {

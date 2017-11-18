@@ -14,7 +14,6 @@ import java.util.TimerTask;
 import java.util.Vector;
 import java.util.concurrent.*;
 
-import static com.tim.filepointer.GlobalValues.EMAIL_ENABLED;
 import static com.tim.filepointer.GlobalValues.MOTION_NUM_IMAGES_BEFORE_EMAILING;
 import static com.tim.filepointer.GlobalValues.WEBCAM_ENABLED;
 
@@ -53,7 +52,7 @@ public class WebcamService implements WebcamMotionListener {
     @PreDestroy
     public void cleanup() {
         if(WEBCAM_ENABLED) {
-            System.out.println("WEBCAM CLEAN UP");
+            System.out.println("Webcam clean up.");
             motionFuture.cancel(true);
             regularFuture.cancel(true);
             executor.shutdown();
@@ -83,12 +82,7 @@ public class WebcamService implements WebcamMotionListener {
     }
 
     private void sendEmailAndCleanup() {
-        if (EMAIL_ENABLED) {
-            System.out.println("Sending email...");
-            emailService.sendEmail(currentMotionFileNames);
-        } else
-            System.out.println("Email disabled.");
-
+        emailService.sendEmail(currentMotionFileNames);
         motionDetectionRunning = false;
         currentMotionFileNames.clear();
         motionFuture.cancel(true);

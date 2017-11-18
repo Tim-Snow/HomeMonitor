@@ -41,6 +41,8 @@ dependencies {
     compile group: 'com.github.sarxos', name: 'webcam-capture-driver-v4l4j', version: '0.3.11'
     compile group: 'org.springframework.boot', name: 'spring-boot-starter-security', version: '1.5.8.RELEASE'
     compile group: 'org.springframework.security.oauth', name: 'spring-security-oauth2', version: '2.2.0.RELEASE'
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-actuator', version: '1.2.1.RELEASE'
+    compile group: 'org.springframework.security', name: 'spring-security-jwt', version: '1.0.8.RELEASE'
     testCompile('org.springframework.boot:spring-boot-starter-test')
     compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
 }

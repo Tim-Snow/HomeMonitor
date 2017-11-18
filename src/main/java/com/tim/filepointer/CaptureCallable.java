@@ -32,7 +32,6 @@ public class CaptureCallable implements Callable {
             e.printStackTrace();
         }
 
-        System.out.println("New image: " + fileName);
         fileService.addToImageNames(fileName);
         return fileName;
     }

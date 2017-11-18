@@ -29,6 +29,7 @@ class FileService {
 
     private fun storeImage(imageName: String) {
         imageNames.push(imageName)
+        println("New image: " + imageName)
         totalImages++
     }
 

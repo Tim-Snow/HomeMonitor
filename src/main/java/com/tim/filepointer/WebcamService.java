@@ -14,6 +14,10 @@ import java.util.TimerTask;
 import java.util.Vector;
 import java.util.concurrent.*;
 
+import static com.tim.filepointer.GlobalValues.EMAIL_ENABLED;
+import static com.tim.filepointer.GlobalValues.MOTION_NUM_IMAGES_BEFORE_EMAILING;
+import static com.tim.filepointer.GlobalValues.WEBCAM_ENABLED;
+
 @Component
 public class WebcamService implements WebcamMotionListener {
 
@@ -33,7 +37,7 @@ public class WebcamService implements WebcamMotionListener {
     @SuppressWarnings("unused")
     @PostConstruct
     public void init() {
-        if(GlobalValues.WEBCAM_ENABLED) {
+        if(WEBCAM_ENABLED) {
             setupWebcam();
 
             regularCaptureCallable = new CaptureCallable(fileService, webcam, "");
@@ -48,7 +52,7 @@ public class WebcamService implements WebcamMotionListener {
     @SuppressWarnings("unused")
     @PreDestroy
     public void cleanup() {
-        if(GlobalValues.WEBCAM_ENABLED) {
+        if(WEBCAM_ENABLED) {
             System.out.println("WEBCAM CLEAN UP");
             motionFuture.cancel(true);
             regularFuture.cancel(true);
@@ -71,7 +75,7 @@ public class WebcamService implements WebcamMotionListener {
 
     @Override
     public void motionDetected(WebcamMotionEvent wme) {
-        if (GlobalValues.WEBCAM_ENABLED && !motionDetectionRunning) {
+        if (WEBCAM_ENABLED && !motionDetectionRunning) {
             System.out.println(">>> MOTION DETECTED <<<");
             motionDetectionRunning = true;
             motionFuture = executor.scheduleAtFixedRate(getMotionTask(), 0, GlobalValues.MOTION_CAPTURE_INTERVAL, TimeUnit.MILLISECONDS);
@@ -79,7 +83,7 @@ public class WebcamService implements WebcamMotionListener {
     }
 
     private void sendEmailAndCleanup() {
-        if (GlobalValues.EMAIL_ENABLED) {
+        if (EMAIL_ENABLED) {
             System.out.println("Sending email...");
             emailService.sendEmail(currentMotionFileNames);
         } else
@@ -93,7 +97,7 @@ public class WebcamService implements WebcamMotionListener {
     String manualCapture() {
         String fileName = "";
 
-        if(GlobalValues.WEBCAM_ENABLED) {
+        if(WEBCAM_ENABLED) {
             try {
                 fileName = (String) manualCaptureCallable.call();
             } catch (Exception e) {
@@ -124,7 +128,7 @@ public class WebcamService implements WebcamMotionListener {
             @Override
             public void run() {
                 try {
-                    if (iterations < GlobalValues.MOTION_NUM_IMAGES_BEFORE_EMAILING) {
+                    if (iterations < MOTION_NUM_IMAGES_BEFORE_EMAILING) {
                         iterations++;
                         String fileName = (String) motionCaptureCallable.call();
                         fileService.addToImageNames(fileName);

@@ -10,6 +10,7 @@ import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -54,11 +55,11 @@ class Util {
             return webcamNotEnabledResponse();
     }
 
-    static Map<String, String> buildMultiResponse(String key, String[] responses) {
+    static Map<String, String> buildMultiResponse(String key, Deque<String> responses) {
         if (WEBCAM_ENABLED) {
             HashMap<String, String> responseMap = new HashMap<>();
             int count = 0;
-            for (String response : responses) {
+            for(String response: responses){
                 responseMap.put(key + " " + count, response);
                 count++;
             }

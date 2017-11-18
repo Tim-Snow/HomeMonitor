@@ -2,13 +2,13 @@ package com.tim.filepointer
 
 import com.tim.filepointer.GlobalValues.MAX_IMAGES
 import org.springframework.stereotype.Component
+import java.util.*
 
 @Component
 class FileService {
 
+    val imageNames: Deque<String> = ArrayDeque()
     var totalImages: Int = 0
-
-    val imageNames = Array<String>(5) { "it = $it" }
 
     init {
         cleanOldFiles()
@@ -16,30 +16,34 @@ class FileService {
 
     fun getLatestImageName(): String {
         if(!imageNames.isEmpty())
-            return imageNames[totalImages]
+            return imageNames.peekFirst()
         return "0"
     }
 
     fun addToImageNames(imageName: String) {
         if(imageNames.size >= MAX_IMAGES || totalImages >= MAX_IMAGES)
-            deleteImage(0)
+            deleteOldestImage()
 
         storeImage(imageName)
     }
 
     private fun storeImage(imageName: String) {
-        imageNames[totalImages + 1] = imageName
+        imageNames.push(imageName)
         totalImages++
     }
 
-    private fun cleanOldFiles() { }
-
-    private fun deleteImage(index: Int) {
-        for((index, value) in imageNames.withIndex()){
-            
+    private fun cleanOldFiles() {
+        for(i in 0..totalImages){
+            deleteOldestImage()
         }
+    }
 
-        imageNames[index] = ""
-        totalImages--
+    private fun deleteOldestImage() {
+        if(totalImages > 0) {
+            println("Deleting: " + imageNames.peekLast())
+            imageNames.removeLast()
+            totalImages--
+            //TODO Actually delete on disk
+        }
     }
 }

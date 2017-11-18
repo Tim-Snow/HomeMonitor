@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
+import static com.tim.filepointer.Util.createImageName;
 import static com.tim.filepointer.Util.jpg;
 
 public class CaptureCallable implements Callable {
@@ -22,7 +23,7 @@ public class CaptureCallable implements Callable {
     }
 
     private String captureImage() {
-        String fileName = Util.createImageName(fileNamePrefix);
+        String fileName = createImageName(fileNamePrefix);
         File file = new File(jpg(fileName));
 
         try {

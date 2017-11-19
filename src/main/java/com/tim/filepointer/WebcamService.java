@@ -4,7 +4,6 @@ import com.github.sarxos.webcam.Webcam;
 import com.github.sarxos.webcam.WebcamMotionDetector;
 import com.github.sarxos.webcam.WebcamMotionEvent;
 import com.github.sarxos.webcam.WebcamMotionListener;
-import com.github.sarxos.webcam.ds.v4l4j.V4l4jDriver;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -30,6 +29,8 @@ public class WebcamService implements WebcamMotionListener {
 
     @Autowired
     private EmailService emailService;
+
+    private Webcam webcam;
     private Vector<String> currentMotionFileNames = new Vector<>();
     private Callable regularCaptureCallable, motionCaptureCallable, manualCaptureCallable;
     private ScheduledFuture<?> regularFuture, motionFuture;
@@ -37,16 +38,12 @@ public class WebcamService implements WebcamMotionListener {
     private boolean motionDetectionRunning = false;
     private boolean motionDetectedSinceLastCheck = false;
 
-    static {
-        Webcam.setDriver(new V4l4jDriver());
-    }
-
     @SuppressWarnings("unused")
     @PostConstruct
     public void init() {
         if (WEBCAM_ENABLED) {
 
-            Webcam webcam = Webcam.getDefault();
+            webcam = Webcam.getDefault();
             WebcamMotionDetector detector = new WebcamMotionDetector(webcam);
 
             webcam.setViewSize(new Dimension(640, 480));
@@ -73,6 +70,8 @@ public class WebcamService implements WebcamMotionListener {
             motionFuture.cancel(true);
             regularFuture.cancel(true);
             executor.shutdown();
+            webcam.close();
+            fileService.cleanOldFiles();
         }
     }
 

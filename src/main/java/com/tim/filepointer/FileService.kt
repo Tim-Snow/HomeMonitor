@@ -35,7 +35,7 @@ class FileService {
         totalImages++
     }
 
-    private fun cleanOldFiles() {
+    fun cleanOldFiles() {
         for(i in 0..totalImages){
             deleteOrStoreOldestImage()
         }

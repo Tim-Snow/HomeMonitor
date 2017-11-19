@@ -26,12 +26,6 @@ repositories {
     }
 }
 
-jar {
-    into('lib') {
-        from 'libs'
-    }
-}
-
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 

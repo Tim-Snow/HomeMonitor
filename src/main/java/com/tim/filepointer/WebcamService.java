@@ -30,7 +30,6 @@ public class WebcamService implements WebcamMotionListener {
 
     @Autowired
     private EmailService emailService;
-    private Webcam webcam;
     private Vector<String> currentMotionFileNames = new Vector<>();
     private Callable regularCaptureCallable, motionCaptureCallable, manualCaptureCallable;
     private ScheduledFuture<?> regularFuture, motionFuture;
@@ -47,7 +46,7 @@ public class WebcamService implements WebcamMotionListener {
     public void init() {
         if (WEBCAM_ENABLED) {
 
-            webcam = Webcam.getDefault();
+            Webcam webcam = Webcam.getDefault();
             WebcamMotionDetector detector = new WebcamMotionDetector(webcam);
 
             webcam.setViewSize(new Dimension(640, 480));

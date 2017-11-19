@@ -2,6 +2,8 @@ package com.tim.filepointer
 
 import com.tim.filepointer.GlobalValues.MAX_IMAGES
 import org.springframework.stereotype.Component
+import java.io.File
+import java.nio.file.*
 import java.util.*
 
 @Component
@@ -22,7 +24,7 @@ class FileService {
 
     fun addToImageNames(imageName: String) {
         if(imageNames.size >= MAX_IMAGES || totalImages >= MAX_IMAGES)
-            deleteOldestImage()
+            deleteOrStoreOldestImage()
 
         storeImage(imageName)
     }
@@ -35,16 +37,28 @@ class FileService {
 
     private fun cleanOldFiles() {
         for(i in 0..totalImages){
-            deleteOldestImage()
+            deleteOrStoreOldestImage()
         }
     }
 
-    private fun deleteOldestImage() {
+    private fun deleteOrStoreOldestImage() {
         if(totalImages > 0) {
-            println("Deleting: " + imageNames.peekLast())
+            val name: String = imageNames.peekLast()
+            val file = File(name)
+            val sourceDirectory = File("").absolutePath + "/"
+            val storageDirectory = sourceDirectory + "storage/"
+
+            if(name.startsWith("MOTION")) {
+                println("Storing: " + name)
+                val source: Path = Paths.get(sourceDirectory + name)
+                Files.move(source, Paths.get(storageDirectory).resolve(source.fileName), StandardCopyOption.REPLACE_EXISTING)
+            } else {
+                println("Deleting: " + name)
+                file.delete()
+            }
+
             imageNames.removeLast()
             totalImages--
-            //TODO Actually delete on disk
         }
     }
 }

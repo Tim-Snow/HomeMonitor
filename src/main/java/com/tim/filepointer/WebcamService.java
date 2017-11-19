@@ -4,6 +4,7 @@ import com.github.sarxos.webcam.Webcam;
 import com.github.sarxos.webcam.WebcamMotionDetector;
 import com.github.sarxos.webcam.WebcamMotionEvent;
 import com.github.sarxos.webcam.WebcamMotionListener;
+import com.github.sarxos.webcam.ds.v4l4j.V4l4jDriver;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -37,18 +38,16 @@ public class WebcamService implements WebcamMotionListener {
     private boolean motionDetectionRunning = false;
     private boolean motionDetectedSinceLastCheck = false;
 
-//    static {
-//        Webcam.setDriver(new V4l4jDriver());
-//    }
+    static {
+        Webcam.setDriver(new V4l4jDriver());
+    }
 
     @SuppressWarnings("unused")
     @PostConstruct
     public void init() {
         if (WEBCAM_ENABLED) {
 
-//            Webcam.setDriver(new V4l4jDriver());
             webcam = Webcam.getDefault();
-            webcam.setViewSize(new Dimension(640, 480));
             WebcamMotionDetector detector = new WebcamMotionDetector(webcam);
 
             webcam.setViewSize(new Dimension(640, 480));

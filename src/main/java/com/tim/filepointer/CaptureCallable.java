@@ -23,8 +23,8 @@ public class CaptureCallable implements Callable {
     }
 
     private String captureImage() {
-        String fileName = createImageName(fileNamePrefix);
-        File file = new File(jpg(fileName));
+        String fileName = jpg(createImageName(fileNamePrefix));
+        File file = new File(fileName);
 
         try {
             ImageIO.write(webcam.getImage(), "JPG", file);

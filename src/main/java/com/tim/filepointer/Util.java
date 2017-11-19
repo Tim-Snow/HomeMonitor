@@ -73,9 +73,9 @@ class Util {
     static ResponseEntity<Object> buildImageResponse(String filename){
         if(WEBCAM_ENABLED) {
             try {
-                File file = new File(jpg(filename));
+                File file = new File(filename);
                 byte[] bytes = readAllBytes(file.toPath());
-                return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(bytes);
+                return ResponseEntity.ok().contentType(MediaType.IMAGE_JPEG).body(bytes);
             } catch (IOException e) {
                 e.printStackTrace();
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(generalErrorResponse());
